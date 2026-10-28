@@ -1,0 +1,133 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #1c1c1e;
+  --stage: #f3efe8;
+  color-scheme: light;
+}
+
+@theme inline {
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-stage: var(--stage);
+  --color-ink: #1c1c1e;
+  --color-muted: #8b909a;
+  --color-mcw: #6c4ce0;
+  --color-mcw-deep: #5536c8;
+  --color-mcw-soft: #f4f0ff;
+  --color-mcw-mist: #e8e0ff;
+}
+
+body {
+  background: var(--stage);
+  color: var(--foreground);
+}
+
+::selection {
+  background: #e4dbff;
+}
+
+:focus-visible {
+  outline: 2px solid #6c4ce0;
+  outline-offset: 2px;
+}
+
+.mcw-scroll {
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #e4dcf8 transparent;
+}
+
+.mcw-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.mcw-scroll::-webkit-scrollbar-thumb {
+  background: #e4dcf8;
+  border-radius: 999px;
+}
+
+.mcw-mascot .mcw-eye {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: mcw-blink 5.4s ease-in-out infinite;
+}
+
+.mcw-mascot .mcw-pupil {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: mcw-look 6.8s ease-in-out infinite;
+}
+
+.mcw-mascot .mcw-dot {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: mcw-dot 1.6s ease-in-out infinite;
+}
+
+.mcw-mascot .mcw-dot:nth-child(2) {
+  animation-delay: 0.16s;
+}
+
+.mcw-mascot .mcw-dot:nth-child(3) {
+  animation-delay: 0.32s;
+}
+
+@keyframes mcw-blink {
+  0%,
+  78%,
+  100% {
+    transform: scaleY(1);
+  }
+  82% {
+    transform: scaleY(0.08);
+  }
+  86% {
+    transform: scaleY(1);
+  }
+  89% {
+    transform: scaleY(0.12);
+  }
+  93% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes mcw-look {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  18% {
+    transform: translate(70%, 15%);
+  }
+  42% {
+    transform: translate(40%, 45%);
+  }
+  64% {
+    transform: translate(-75%, 10%);
+  }
+  84% {
+    transform: translate(-10%, -30%);
+  }
+}
+
+@keyframes mcw-dot {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mcw-mascot .mcw-eye,
+  .mcw-mascot .mcw-pupil,
+  .mcw-mascot .mcw-dot {
+    animation: none;
+  }
+}
