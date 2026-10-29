@@ -13,6 +13,7 @@ import {
   SettingsNavIcon,
 } from "@/components/icons";
 import { Mascot } from "@/components/mascot";
+import { useSession } from "@/components/session";
 
 const tabs = [
   { href: "/", label: "Inbox" },
@@ -23,6 +24,7 @@ const tabs = [
 
 export function AppChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { demoMode } = useSession();
   const [panel, setPanel] = useState<"bell" | "menu" | null>(null);
   const [panelPath, setPanelPath] = useState(pathname);
   const [bellSeen, setBellSeen] = useState(false);
@@ -79,6 +81,12 @@ export function AppChrome({ children }: { children: React.ReactNode }) {
           <MenuIcon className="h-6 w-6" />
         </button>
       </header>
+
+      {demoMode ? (
+        <p className="shrink-0 px-4 pb-2 text-center text-[11px] font-semibold text-mcw">
+          Demo mode
+        </p>
+      ) : null}
 
       <main
         id="app-main"
