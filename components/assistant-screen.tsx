@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Mascot } from "@/components/mascot";
+import { PaAvatar } from "@/components/pa-avatar";
+import { ChooseAssistant } from "@/components/pa-preference";
 import { assistantPrompts } from "@/lib/demo-data";
 
 export function AssistantScreen() {
@@ -10,7 +11,7 @@ export function AssistantScreen() {
 
   return (
     <div className="px-5 pt-2 pb-8">
-      <Mascot size="hero" className="mx-auto" />
+      <PaAvatar size="hero" idle className="mx-auto" />
       <h2 className="mt-2 text-center text-[1.65rem] font-extrabold tracking-[-0.04em] text-ink">
         Hi, I am MyCoWorker
       </h2>
@@ -20,6 +21,7 @@ export function AssistantScreen() {
       <p className="mt-3 text-center text-sm leading-5 text-muted">
         Ask about today. I only know the demo inbox for now.
       </p>
+      <ChooseAssistant />
       <div className="mt-6 flex flex-col gap-2">
         {assistantPrompts.map((prompt) => {
           const selected = prompt.id === activeId;
@@ -46,7 +48,7 @@ export function AssistantScreen() {
       </div>
       {active ? (
         <div className="mt-4 flex gap-3 rounded-3xl bg-mcw-soft p-4">
-          <Mascot size="inline" className="shrink-0" />
+          <PaAvatar size="inline" className="shrink-0" />
           <p className="text-sm leading-6 text-[#2E2844]">{active.reply}</p>
         </div>
       ) : null}

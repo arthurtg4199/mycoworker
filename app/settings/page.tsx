@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { AccountSettings } from "@/components/account-settings";
 import { ChannelIcon } from "@/components/icons";
+import { ChooseAssistant } from "@/components/pa-preference";
 import { channelFilters } from "@/lib/demo-data";
 
 export const metadata: Metadata = {
@@ -26,6 +27,8 @@ export default function SettingsPage() {
           I handle the chats. You close the deals.
         </p>
       </div>
+
+      <ChooseAssistant />
 
       <AccountSettings />
 

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Avatar } from "@/components/avatar";
-import { Mascot } from "@/components/mascot";
+import { PaAvatar } from "@/components/pa-avatar";
 import { StatusPill } from "@/components/status-pill";
 import { loadWorkspace } from "@/lib/db/queries";
 import { channelLabel } from "@/lib/demo-data";
@@ -33,7 +33,7 @@ export default async function BuyersPage() {
       </p>
       {buyers.length === 0 ? (
         <div className="px-2 py-10 text-center">
-          <Mascot size="empty" className="mx-auto" />
+          <PaAvatar size="empty" className="mx-auto" />
         </div>
       ) : (
         <ul className="mt-4 space-y-3">

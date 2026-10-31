@@ -1,5 +1,6 @@
 import { AppChrome } from "@/components/app-chrome";
 import { AuthScreen } from "@/components/auth-screen";
+import { PaAvatarProvider } from "@/components/pa-preference";
 import { SessionProvider } from "@/components/session";
 import { getAuthUser } from "@/lib/auth";
 import { supabaseConfigStatus } from "@/lib/supabase/env";
@@ -10,7 +11,9 @@ export function RootFrame({ children }: { children: React.ReactNode }) {
   if (status === "demo") {
     return (
       <SessionProvider value={{ demoMode: true, email: null }}>
-        <AppChrome>{children}</AppChrome>
+        <PaAvatarProvider>
+          <AppChrome>{children}</AppChrome>
+        </PaAvatarProvider>
       </SessionProvider>
     );
   }
@@ -31,7 +34,9 @@ async function AuthedFrame({ children }: { children: React.ReactNode }) {
 
   return (
     <SessionProvider value={{ demoMode: false, email: user.email }}>
-      <AppChrome>{children}</AppChrome>
+      <PaAvatarProvider>
+        <AppChrome>{children}</AppChrome>
+      </PaAvatarProvider>
     </SessionProvider>
   );
 }
