@@ -1,4 +1,5 @@
 import { createBrowserClient } from "@supabase/ssr";
+import type { Database } from "@/lib/db/types";
 import { getSupabaseEnv } from "@/lib/supabase/env";
 
 /** Browser Supabase client. Session cookies match the server client. */
@@ -8,5 +9,5 @@ export function createClient() {
     throw new Error("Supabase is not configured.");
   }
 
-  return createBrowserClient(env.url, env.key);
+  return createBrowserClient<Database>(env.url, env.key);
 }
