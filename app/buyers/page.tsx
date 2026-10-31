@@ -33,7 +33,7 @@ export default async function BuyersPage() {
       </p>
       {buyers.length === 0 ? (
         <div className="px-2 py-10 text-center">
-          <Mascot compact className="mx-auto h-20 w-20" />
+          <Mascot size="empty" className="mx-auto" />
         </div>
       ) : (
         <ul className="mt-4 space-y-3">
