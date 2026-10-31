@@ -243,10 +243,10 @@ export function BuyersNavIcon() {
 
 export function AnalyticsNavIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true">
-      <rect x="4" y="12" width="3.5" height="7" rx="1.2" fill="currentColor" />
-      <rect x="10.25" y="5" width="3.5" height="14" rx="1.2" fill="currentColor" />
-      <rect x="16.5" y="9" width="3.5" height="10" rx="1.2" fill="currentColor" />
+    <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+      <rect x="4.4" y="12.5" width="3.1" height="6.2" rx="1.1" fill="currentColor" />
+      <rect x="10.45" y="6.2" width="3.1" height="12.5" rx="1.1" fill="currentColor" />
+      <rect x="16.5" y="9.4" width="3.1" height="9.3" rx="1.1" fill="currentColor" />
     </svg>
   );
 }

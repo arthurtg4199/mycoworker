@@ -55,10 +55,16 @@ body {
   animation: mcw-blink 5.4s ease-in-out infinite;
 }
 
+.mcw-mascot .mcw-gaze {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: mcw-gaze 7.2s ease-in-out infinite;
+}
+
 .mcw-mascot .mcw-pupil {
   transform-box: fill-box;
   transform-origin: center;
-  animation: mcw-look 6.8s ease-in-out infinite;
+  animation: mcw-look 7.2s ease-in-out infinite;
 }
 
 .mcw-mascot .mcw-dot {
@@ -95,22 +101,41 @@ body {
   }
 }
 
-@keyframes mcw-look {
+@keyframes mcw-gaze {
   0%,
+  12%,
   100% {
     transform: translate(0, 0);
   }
-  18% {
-    transform: translate(70%, 15%);
+  26%,
+  44% {
+    transform: translate(38%, 12%);
   }
-  42% {
-    transform: translate(40%, 45%);
+  58%,
+  76% {
+    transform: translate(-40%, 10%);
   }
-  64% {
-    transform: translate(-75%, 10%);
+  88% {
+    transform: translate(8%, -16%);
   }
-  84% {
-    transform: translate(-10%, -30%);
+}
+
+@keyframes mcw-look {
+  0%,
+  12%,
+  100% {
+    transform: translate(0, 0);
+  }
+  26%,
+  44% {
+    transform: translate(70%, 24%);
+  }
+  58%,
+  76% {
+    transform: translate(-72%, 20%);
+  }
+  88% {
+    transform: translate(12%, -30%);
   }
 }
 
@@ -126,6 +151,7 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .mcw-mascot .mcw-eye,
+  .mcw-mascot .mcw-gaze,
   .mcw-mascot .mcw-pupil,
   .mcw-mascot .mcw-dot {
     animation: none;

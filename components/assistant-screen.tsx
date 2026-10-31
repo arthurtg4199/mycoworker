@@ -10,7 +10,7 @@ export function AssistantScreen() {
 
   return (
     <div className="px-5 pt-2 pb-8">
-      <Mascot className="mx-auto h-40 w-40" />
+      <Mascot size="hero" className="mx-auto" />
       <h2 className="mt-2 text-center text-[1.65rem] font-extrabold tracking-[-0.04em] text-ink">
         Hi, I am MyCoWorker
       </h2>
@@ -46,7 +46,7 @@ export function AssistantScreen() {
       </div>
       {active ? (
         <div className="mt-4 flex gap-3 rounded-3xl bg-mcw-soft p-4">
-          <Mascot compact className="h-12 w-12 shrink-0" />
+          <Mascot size="inline" className="shrink-0" />
           <p className="text-sm leading-6 text-[#2E2844]">{active.reply}</p>
         </div>
       ) : null}
