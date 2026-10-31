@@ -8,9 +8,8 @@ import {
   ChannelIcon,
   ChevronLeftIcon,
   SlidersIcon,
-  SparklesIcon,
 } from "@/components/icons";
-import { Mascot } from "@/components/mascot";
+import { PaAvatar } from "@/components/pa-avatar";
 import { StatusPill } from "@/components/status-pill";
 import {
   channelFilters,
@@ -122,7 +121,7 @@ export function InboxScreen({
         href="/buyers"
         className="mx-4 mt-3 flex items-center gap-3 rounded-[22px] bg-mcw-soft px-3.5 py-3.5"
       >
-        <SparklesIcon className="h-9 w-9 shrink-0" />
+        <PaAvatar size="inline" className="shadow-[0_0_0_2px_white]" />
         <span className="min-w-0 flex-1">
           <span className="block text-[15px] leading-5 font-bold text-[#241C3A]">
             I handled {summary.chatsHandled}{" "}
@@ -247,7 +246,7 @@ function EmptyInbox({ fresh, failed }: { fresh: boolean; failed: boolean }) {
 
   return (
     <div className="px-6 py-14 text-center">
-      <Mascot size="empty" className="mx-auto" />
+      <PaAvatar size="empty" className="mx-auto" />
       <p className="mt-3 text-base font-bold text-ink">{title}</p>
       <p className="mt-1 text-sm text-muted">{body}</p>
     </div>
@@ -306,7 +305,7 @@ function Thread({
       ))}
       {replies.length === 0 ? (
         <div className="mt-4 flex gap-3 rounded-3xl bg-mcw-soft p-3">
-          <Mascot size="inline" className="shrink-0" />
+          <PaAvatar size="inline" className="shrink-0" />
           <p className="text-sm leading-5 text-[#3C3458]">
             I can draft this reply in a later step. A preview you type here
             stays on this screen.

@@ -19,7 +19,7 @@ This is a mobile-first app shell. Without Supabase settings it runs in demo mode
 - **Sign in** — email and password, shown when the Supabase URL and anon key are set
 - **Inbox** — daily summary (“I handled 42 chats today. 3 buyers ready for you.”), channel chips, status tags, and demo threads
 - **Buyers**, **Analytics**, **Settings** — friendly placeholders. Settings includes sign out once you are signed in
-- **Talk to MyCoWorker** — assistant button with the headset helper. The eyes blink and look around.
+- **Talk to MyCoWorker** — assistant button with the corporate PA portrait you picked in Settings.
 
 ## Run locally
 
@@ -62,4 +62,4 @@ After deploy, the site can be installed to a phone home screen from the browser 
 - Accent: `#6C4CE0`
 - `public/logo_final.png` is the lockup (smiling chat bubble, wordmark, and “Your friendly assistant for small business”)
 - Favicon and PWA icons use that same bubble mark
-- The assistant icon is a simple SVG of concept C, the headset helper
+- The assistant portrait is one of four corporate PA options in `public/avatars/pa/`. The default is glasses, a charcoal suit, and a purple tie. Settings and the assistant screen both offer “Choose your assistant”. The choice is stored on the device, and on the Supabase user when you are signed in.

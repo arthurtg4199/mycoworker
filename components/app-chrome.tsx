@@ -12,7 +12,7 @@ import {
   MenuIcon,
   SettingsNavIcon,
 } from "@/components/icons";
-import { Mascot } from "@/components/mascot";
+import { PaAvatar } from "@/components/pa-avatar";
 import { useSession } from "@/components/session";
 
 const tabs = [
@@ -100,9 +100,7 @@ export function AppChrome({ children }: { children: React.ReactNode }) {
           href="/assistant"
           className="absolute right-4 z-20 inline-flex items-center gap-2 rounded-full bg-mcw py-1.5 pr-4 pl-1.5 text-[15px] font-semibold text-white shadow-[0_10px_24px_rgba(108,76,224,0.35)] bottom-[calc(4rem+0.85rem+env(safe-area-inset-bottom))]"
         >
-          <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-[#EDE7FF]">
-            <Mascot size="fab" />
-          </span>
+          <PaAvatar size="fab" className="shadow-[0_0_0_2px_rgba(255,255,255,0.9)]" />
           Talk to MyCoWorker
         </Link>
       ) : null}
