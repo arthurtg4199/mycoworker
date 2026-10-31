@@ -53,6 +53,16 @@ body {
   animation: mcw-pa-idle 6s ease-in-out infinite;
 }
 
+.mcw-pa-eye {
+  transform-origin: center;
+  animation: mcw-pa-blink 5.4s ease-in-out infinite;
+}
+
+.mcw-pa-pupil {
+  transform-origin: center;
+  animation: mcw-pa-look 7.2s ease-in-out infinite;
+}
+
 @keyframes mcw-pa-idle {
   0%,
   100% {
@@ -63,8 +73,49 @@ body {
   }
 }
 
+@keyframes mcw-pa-blink {
+  0%,
+  78%,
+  100% {
+    transform: scaleY(1);
+  }
+  82% {
+    transform: scaleY(0.08);
+  }
+  86% {
+    transform: scaleY(1);
+  }
+  89% {
+    transform: scaleY(0.12);
+  }
+  93% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes mcw-pa-look {
+  0%,
+  12%,
+  100% {
+    transform: translate(0, 0);
+  }
+  26%,
+  44% {
+    transform: translate(-62%, 16%);
+  }
+  58%,
+  76% {
+    transform: translate(64%, 12%);
+  }
+  88% {
+    transform: translate(8%, -20%);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .mcw-pa-idle {
+  .mcw-pa-idle,
+  .mcw-pa-eye,
+  .mcw-pa-pupil {
     animation: none;
   }
 }

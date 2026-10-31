@@ -101,4 +101,4 @@ After deploy, the site can be installed to a phone home screen from the browser 
 - Accent: `#6C4CE0`
 - `public/logo_final.png` is the lockup (smiling chat bubble, wordmark, and “Your friendly assistant for small business”)
 - Favicon and PWA icons use that same bubble mark
-- The assistant portrait is one of four corporate PA options in `public/avatars/pa/`. The default is glasses, a charcoal suit, and a purple tie. Settings and the assistant screen both offer “Choose your assistant”. The choice is stored on the device, and on the Supabase user when you are signed in.
+- The assistant portrait is one of four corporate PA options in `public/avatars/pa/`. The default is glasses, a charcoal suit, and a purple tie. Change it like a profile picture: in Settings, or while creating an account, tap the picture and then pick one. The chat screen does not ask again. The choice is stored on the device, and on the Supabase user when you are signed in. The portrait’s dot eyes blink and glance, and stay still when reduced motion is on.

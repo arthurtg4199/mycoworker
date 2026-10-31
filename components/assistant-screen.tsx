@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { PaAvatar } from "@/components/pa-avatar";
-import { ChooseAssistant } from "@/components/pa-preference";
 
 export function AssistantScreen({
   prompts,
@@ -28,7 +27,6 @@ export function AssistantScreen({
           ? "Ask about today. I am looking at your WhatsApp chats."
           : "Ask about today. I only know the sample inbox for now."}
       </p>
-      <ChooseAssistant />
       <div className="mt-6 flex flex-col gap-2">
         {prompts.map((prompt) => {
           const selected = prompt.id === activeId;
