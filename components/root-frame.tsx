@@ -4,6 +4,7 @@ import { PaAvatarProvider } from "@/components/pa-preference";
 import { SessionProvider } from "@/components/session";
 import { getAuthUser } from "@/lib/auth";
 import { liveHighlights } from "@/lib/db/inbox";
+import { loadBusinessProfile, shopFacts } from "@/lib/db/profile";
 import { loadWorkspace } from "@/lib/db/queries";
 import { supabaseConfigStatus } from "@/lib/supabase/env";
 
@@ -34,8 +35,12 @@ async function AuthedFrame({ children }: { children: React.ReactNode }) {
     return <AuthScreen />;
   }
 
-  const workspace = await loadWorkspace();
+  const [workspace, profile] = await Promise.all([
+    loadWorkspace(),
+    loadBusinessProfile(),
+  ]);
   const sampleChats = workspace.source === "demo";
+  const shop = shopFacts(profile);
 
   return (
     <SessionProvider value={{ demoMode: false, email: user.email }}>
@@ -44,6 +49,11 @@ async function AuthedFrame({ children }: { children: React.ReactNode }) {
           sampleChats={sampleChats}
           whatsappConnected={workspace.whatsappConnected}
           highlights={sampleChats ? null : liveHighlights(workspace)}
+          shop={
+            shop
+              ? { name: shop.business_name, location: shop.location }
+              : null
+          }
         >
           {children}
         </AppChrome>

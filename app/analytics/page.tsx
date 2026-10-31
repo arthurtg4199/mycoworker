@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { loadBusinessProfile, shopFacts } from "@/lib/db/profile";
 import { loadWorkspace } from "@/lib/db/queries";
 
 export const metadata: Metadata = {
@@ -13,8 +14,12 @@ const barClass = {
 } as const;
 
 export default async function AnalyticsPage() {
-  const workspace = await loadWorkspace();
+  const [workspace, profile] = await Promise.all([
+    loadWorkspace(),
+    loadBusinessProfile(),
+  ]);
   const { summary, channelTotals } = workspace;
+  const shopName = shopFacts(profile)?.business_name ?? null;
   const total = channelTotals.reduce((sum, row) => sum + row.count, 0);
 
   return (
@@ -25,7 +30,9 @@ export default async function AnalyticsPage() {
       <p className="mt-1 text-sm leading-5 text-muted">
         {workspace.source === "demo"
           ? "A friendly peek at today. Live numbers come later."
-          : "A friendly peek at today."}
+          : shopName
+            ? `A friendly peek at today for ${shopName}.`
+            : "A friendly peek at today."}
       </p>
       {workspace.notice ? (
         <p className="mt-3 rounded-[22px] bg-mcw-soft px-3.5 py-3 text-sm leading-5 font-medium text-[#3C3458]">

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import {
   AnalyticsNavIcon,
   BellIcon,
@@ -14,6 +14,10 @@ import {
 } from "@/components/icons";
 import { PaAvatar } from "@/components/pa-avatar";
 import { useSession } from "@/components/session";
+import {
+  readStoredBusinessProfile,
+  subscribeBusinessProfile,
+} from "@/lib/business-profile";
 
 const tabs = [
   { href: "/", label: "Inbox" },
@@ -27,14 +31,26 @@ export function AppChrome({
   sampleChats = false,
   whatsappConnected = false,
   highlights = null,
+  shop = null,
 }: {
   children: React.ReactNode;
   sampleChats?: boolean;
   whatsappConnected?: boolean;
   highlights?: string[] | null;
+  shop?: { name: string; location: string | null } | null;
 }) {
   const pathname = usePathname();
   const { demoMode } = useSession();
+  const storedShop = useSyncExternalStore(
+    subscribeBusinessProfile,
+    readStoredBusinessProfile,
+    () => null,
+  );
+  const menuShop = demoMode
+    ? storedShop
+      ? { name: storedShop.business_name, location: storedShop.location || null }
+      : null
+    : shop;
   const [panel, setPanel] = useState<"bell" | "menu" | null>(null);
   const [panelPath, setPanelPath] = useState(pathname);
   const [bellSeen, setBellSeen] = useState(false);
@@ -173,6 +189,7 @@ export function AppChrome({
                 demoMode={demoMode}
                 sampleChats={sampleChats}
                 whatsappConnected={whatsappConnected}
+                shop={menuShop}
               />
             )}
           </div>
@@ -207,10 +224,12 @@ function MenuPanel({
   demoMode,
   sampleChats,
   whatsappConnected,
+  shop,
 }: {
   demoMode: boolean;
   sampleChats: boolean;
   whatsappConnected: boolean;
+  shop: { name: string; location: string | null } | null;
 }) {
   const note = demoMode
     ? "This is a preview. Chats stay on this screen, and nothing is connected yet."
@@ -231,6 +250,14 @@ function MenuPanel({
       <p className="mt-1 text-sm leading-5 font-semibold text-ink">
         I handle the chats. You close the deals.
       </p>
+      {shop ? (
+        <p className="mt-2 text-sm font-bold break-words text-ink">
+          {shop.name}
+          {shop.location ? (
+            <span className="font-semibold text-muted"> · {shop.location}</span>
+          ) : null}
+        </p>
+      ) : null}
       <p className="mt-2 text-xs font-medium tracking-wide text-muted uppercase">
         By OKEREX
       </p>

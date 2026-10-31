@@ -1,8 +1,14 @@
+import {
+  isReplyTone,
+  profileLimits,
+  type ReplyTone,
+} from "@/lib/business-profile";
 import type { Channel } from "@/lib/demo-data";
 import type {
   AppointmentInput,
   AppointmentPatch,
   AppointmentStatus,
+  BusinessProfileInput,
   ConversationInput,
   ConversationPatch,
   ConversationStatus,
@@ -129,6 +135,24 @@ function assertCurrency(value: string | undefined) {
   return currency;
 }
 
+function optionalCurrency(value: string | null | undefined) {
+  if (value === undefined || value === null) return null;
+  const currency = value.trim().toUpperCase();
+  if (!currency) return null;
+  if (!/^[A-Z]{3}$/.test(currency)) {
+    throw new Error("Currency must be a 3-letter code, such as NGN.");
+  }
+  return currency;
+}
+
+function assertReplyTone(value: string | null | undefined): ReplyTone {
+  if (value === undefined || value === null || value.trim() === "") {
+    return "friendly";
+  }
+  if (!isReplyTone(value)) throw new Error("Choose a reply style.");
+  return value;
+}
+
 export function assertTimestamp(value: string, label: string) {
   const parsed = Date.parse(value);
   if (Number.isNaN(parsed)) throw new Error(`${label} must be a date.`);
@@ -234,6 +258,27 @@ export function appointmentUpdate(input: AppointmentPatch) {
   };
   assertPatch(patch);
   return patch;
+}
+
+export function profileUpsert(input: BusinessProfileInput) {
+  return {
+    business_name: requiredText(
+      input.business_name,
+      profileLimits.business_name,
+      "Business name",
+    ),
+    what_they_sell:
+      optionalText(
+        input.what_they_sell,
+        profileLimits.what_they_sell,
+        "What you sell",
+      ) ?? null,
+    hours: optionalText(input.hours, profileLimits.hours, "Hours") ?? null,
+    location:
+      optionalText(input.location, profileLimits.location, "City") ?? null,
+    reply_tone: assertReplyTone(input.reply_tone),
+    currency: optionalCurrency(input.currency),
+  };
 }
 
 export function paymentInsert(input: PaymentInput) {

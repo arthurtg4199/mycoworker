@@ -1,3 +1,4 @@
+import { draftCustomerReply, isReplyTone } from "@/lib/business-profile";
 import {
   buyers,
   channelFilters,
@@ -259,7 +260,10 @@ export function liveHighlights(workspace: WorkspaceView) {
   return lines;
 }
 
-export function liveAssistantPrompts(workspace: WorkspaceView) {
+export function liveAssistantPrompts(
+  workspace: WorkspaceView,
+  shop?: { business_name: string; reply_tone: string | null } | null,
+) {
   const waiting = workspace.buyers;
   const first = waiting[0];
   const firstName = first?.name.split(" ")[0] ?? "";
@@ -272,6 +276,19 @@ export function liveAssistantPrompts(workspace: WorkspaceView) {
           .join(" ")}`;
   const handled = workspace.summary.chatsHandled;
   const ready = workspace.summary.buyersReady;
+  const tone = isReplyTone(shop?.reply_tone) ? shop.reply_tone : "friendly";
+  const draft = !first
+    ? shop
+      ? `When a customer messages ${shop.business_name}, I will draft the reply here. Nothing goes out until you send it from the inbox.`
+      : "When a customer messages you, I will draft the reply here. Nothing goes out until you send it from the inbox."
+    : shop
+      ? draftCustomerReply({
+          tone,
+          firstName,
+          businessName: shop.business_name,
+          preview: first.preview,
+        })
+      : `Hi ${firstName}! Thanks for messaging us. I can help with “${first.preview}” Send it from the inbox when you want it to go out on WhatsApp.`;
   return [
     { id: "who", label: "Who should I talk to?", reply: who },
     {
@@ -282,9 +299,7 @@ export function liveAssistantPrompts(workspace: WorkspaceView) {
     {
       id: "draft",
       label: first ? `Draft a reply to ${firstName}` : "Draft a reply",
-      reply: first
-        ? `Hi ${firstName}! Thanks for messaging us. I can help with “${first.preview}” Send it from the inbox when you want it to go out on WhatsApp.`
-        : "When a customer messages you, I will draft the reply here. Nothing goes out until you send it from the inbox.",
+      reply: draft,
     },
   ];
 }
