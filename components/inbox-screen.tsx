@@ -17,7 +17,12 @@ import {
   type Channel,
   type Chat,
 } from "@/lib/demo-data";
+import type { Message } from "@/lib/db/types";
 import type { WorkspaceSource } from "@/lib/db/inbox";
+import {
+  loadThreadMessages,
+  sendWhatsAppReply,
+} from "@/app/whatsapp/actions";
 
 type StatusFilter = "all" | "needs_you" | "answered" | "followed_up";
 
@@ -33,11 +38,15 @@ export function InboxScreen({
   summary,
   source,
   notice,
+  whatsappConnected,
+  whatsappAutoReply,
 }: {
   chats: Chat[];
   summary: { chatsHandled: number; buyersReady: number };
   source: WorkspaceSource;
   notice: string | null;
+  whatsappConnected: boolean;
+  whatsappAutoReply: boolean;
 }) {
   const [channel, setChannel] = useState<Channel | "all">("all");
   const [status, setStatus] = useState<StatusFilter>("all");
@@ -62,7 +71,11 @@ export function InboxScreen({
   if (openChat) {
     return (
       <Thread
+        key={openChat.id}
         chat={openChat}
+        live={source === "live"}
+        whatsappConnected={whatsappConnected}
+        whatsappAutoReply={whatsappAutoReply}
         replies={replies[openChat.id] ?? []}
         onBack={() => setOpenId(null)}
         onSend={(text) =>
@@ -186,6 +199,7 @@ export function InboxScreen({
         <EmptyInbox
           fresh={source === "live" && chats.length === 0 && !notice}
           failed={Boolean(notice) && chats.length === 0}
+          whatsappConnected={whatsappConnected}
         />
       ) : (
         <ul className="mt-1 px-2">
@@ -232,7 +246,15 @@ export function InboxScreen({
   );
 }
 
-function EmptyInbox({ fresh, failed }: { fresh: boolean; failed: boolean }) {
+function EmptyInbox({
+  fresh,
+  failed,
+  whatsappConnected,
+}: {
+  fresh: boolean;
+  failed: boolean;
+  whatsappConnected: boolean;
+}) {
   const title = failed
     ? "I will try again in a moment."
     : fresh
@@ -241,7 +263,9 @@ function EmptyInbox({ fresh, failed }: { fresh: boolean; failed: boolean }) {
   const body = failed
     ? "Your saved chats stay put."
     : fresh
-      ? "When a customer messages you, the conversation will land here."
+      ? whatsappConnected
+        ? "WhatsApp is connected. A new message to your number will show up here."
+        : "When a customer messages you, the conversation will land here."
       : "Nothing in this filter. Try another channel.";
 
   return (
@@ -255,17 +279,46 @@ function EmptyInbox({ fresh, failed }: { fresh: boolean; failed: boolean }) {
 
 function Thread({
   chat,
+  live,
+  whatsappConnected,
+  whatsappAutoReply,
   replies,
   onBack,
   onSend,
 }: {
   chat: Chat;
+  live: boolean;
+  whatsappConnected: boolean;
+  whatsappAutoReply: boolean;
   replies: string[];
   onBack: () => void;
   onSend: (text: string) => void;
 }) {
   const [draft, setDraft] = useState("");
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(live);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [sendError, setSendError] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
   const channel = chat.channels[0];
+  const canSend = live && channel === "whatsapp" && whatsappConnected;
+
+  useEffect(() => {
+    if (!live) return;
+    let cancelled = false;
+    void loadThreadMessages(chat.id).then((result) => {
+      if (cancelled) return;
+      setMessages(result.messages);
+      setLoadError(result.error ?? null);
+      setLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [chat.id, live]);
+
+  const savedIds = new Set(messages.map((message) => message.content));
+  const localReplies = replies.filter((reply) => !savedIds.has(reply));
 
   return (
     <div className="px-4 pt-1">
@@ -288,27 +341,41 @@ function Thread({
           </p>
         </div>
       </div>
-      <div className="mt-4 flex justify-start">
-        <div className="max-w-[85%] rounded-3xl rounded-tl-md bg-[#F3F4F6] px-4 py-3 text-[15px] leading-6 text-ink">
-          {chat.preview}
+      {loading ? (
+        <p className="mt-4 text-sm text-muted">Opening chat…</p>
+      ) : messages.length > 0 ? (
+        <div className="mt-4 space-y-3">
+          {messages.map((message) => (
+            <MessageBubble key={message.id} message={message} />
+          ))}
         </div>
-      </div>
+      ) : (
+        <div className="mt-4 flex justify-start">
+          <div className="max-w-[85%] rounded-3xl rounded-tl-md bg-[#F3F4F6] px-4 py-3 text-[15px] leading-6 text-ink">
+            {chat.preview}
+          </div>
+        </div>
+      )}
+      {loadError ? (
+        <p className="mt-3 text-sm font-semibold text-[#9A3B4A]">{loadError}</p>
+      ) : null}
       <div className="mt-2">
         <StatusPill status={chat.status} />
       </div>
-      {replies.map((reply) => (
+      {localReplies.map((reply) => (
         <div key={reply} className="mt-3 flex justify-end">
           <div className="max-w-[85%] rounded-3xl rounded-tr-md bg-mcw px-4 py-3 text-[15px] leading-6 text-white">
             {reply}
           </div>
         </div>
       ))}
-      {replies.length === 0 ? (
+      {!canSend && localReplies.length === 0 ? (
         <div className="mt-4 flex gap-3 rounded-3xl bg-mcw-soft p-3">
           <PaAvatar size="inline" className="shrink-0" />
           <p className="text-sm leading-5 text-[#3C3458]">
-            I can draft this reply in a later step. A preview you type here
-            stays on this screen.
+            {live
+              ? "This chat is saved. Sending from here is on WhatsApp once that number is connected."
+              : "I can draft this reply in a later step. A preview you type here stays on this screen."}
           </p>
         </div>
       ) : null}
@@ -317,9 +384,23 @@ function Thread({
         onSubmit={(event) => {
           event.preventDefault();
           const text = draft.trim();
-          if (!text) return;
-          onSend(text);
-          setDraft("");
+          if (!text || sending) return;
+          setSendError(null);
+          if (!canSend) {
+            onSend(text);
+            setDraft("");
+            return;
+          }
+          setSending(true);
+          void sendWhatsAppReply(chat.id, text).then((result) => {
+            setSending(false);
+            if (!result.ok) {
+              setSendError(result.message);
+              return;
+            }
+            setMessages((current) => [...current, result.message]);
+            setDraft("");
+          });
         }}
       >
         <label className="sr-only" htmlFor="reply">
@@ -335,14 +416,48 @@ function Thread({
         <button
           type="submit"
           className="h-12 rounded-full bg-mcw px-4 text-sm font-semibold text-white disabled:opacity-40"
-          disabled={draft.trim().length === 0}
+          disabled={draft.trim().length === 0 || sending}
         >
-          Send
+          {sending ? "Sending…" : "Send"}
         </button>
       </form>
-      <p className="mt-2 text-center text-xs text-muted">
-        Preview only. Nothing is sent yet.
-      </p>
+      {sendError ? (
+        <p className="mt-2 text-center text-sm font-semibold text-[#9A3B4A]">
+          {sendError}
+        </p>
+      ) : (
+        <p className="mt-2 text-center text-xs text-muted">
+          {canSend
+            ? whatsappAutoReply
+              ? "Auto-reply is on. This still sends on WhatsApp when you tap Send."
+              : "Ask me first. This sends on WhatsApp when you tap Send."
+            : live
+              ? "Nothing is sent from here until WhatsApp is connected."
+              : "Preview only. Nothing is sent yet."}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function MessageBubble({ message }: { message: Message }) {
+  const mine = message.role !== "user";
+  return (
+    <div className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+      <div
+        className={`max-w-[85%] rounded-3xl px-4 py-3 text-[15px] leading-6 ${
+          mine
+            ? "rounded-tr-md bg-mcw text-white"
+            : "rounded-tl-md bg-[#F3F4F6] text-ink"
+        }`}
+      >
+        {message.role === "assistant" ? (
+          <span className="mb-1 block text-[11px] font-bold tracking-wide uppercase opacity-80">
+            MyCoWorker
+          </span>
+        ) : null}
+        {message.content}
+      </div>
     </div>
   );
 }

@@ -24,6 +24,8 @@ export type WorkspaceView = {
   chats: Chat[];
   buyers: Chat[];
   channelTotals: { channel: Channel; label: string; count: number }[];
+  whatsappConnected: boolean;
+  whatsappAutoReply: boolean;
 };
 
 const avatarTints = [
@@ -42,6 +44,17 @@ export function demoWorkspace(): WorkspaceView {
     chats,
     buyers,
     channelTotals,
+    whatsappConnected: false,
+    whatsappAutoReply: false,
+  };
+}
+
+/** Signed-in account with no saved chats and WhatsApp not connected yet. */
+export function sampleWorkspace(): WorkspaceView {
+  return {
+    ...demoWorkspace(),
+    notice:
+      "Sample chats. Connect WhatsApp in Settings when you want your real number here.",
   };
 }
 
@@ -61,6 +74,8 @@ export function unavailableWorkspace(): WorkspaceView {
     chats: [],
     buyers: [],
     channelTotals: emptyChannelTotals(),
+    whatsappConnected: false,
+    whatsappAutoReply: false,
   };
 }
 
@@ -116,6 +131,13 @@ function uiStatus(status: ConversationStatus): ChatStatus | undefined {
   return undefined;
 }
 
+type InboxThread = {
+  customerId: string;
+  sort: number;
+  preview: ChatPreview;
+  chat: Chat;
+};
+
 function toInboxChat(preview: ChatPreview, now: Date): Chat {
   return {
     id: preview.id,
@@ -139,39 +161,48 @@ export function workspaceFromRecords(
   customers: Customer[],
   previews: ChatPreview[],
   now = new Date(),
+  whatsapp: { connected: boolean; autoReply: boolean } = {
+    connected: false,
+    autoReply: false,
+  },
 ): WorkspaceView {
-  const threads = previews
+  const threads: InboxThread[] = previews
     .map((preview) => ({
       customerId: preview.customer_id,
       sort: recency(preview.last_message_at, preview.updated_at),
+      preview,
       chat: toInboxChat(preview, now),
     }))
     .sort((a, b) => b.sort - a.sort);
 
-  const threadByCustomer = new Map<string, Chat>();
+  const seenBuyers = new Set<string>();
+  const readyBuyers: Chat[] = [];
   for (const thread of threads) {
-    if (!threadByCustomer.has(thread.customerId)) {
-      threadByCustomer.set(thread.customerId, thread.chat);
-    }
+    const waiting =
+      thread.preview.status === "hot" || thread.preview.status === "your_turn";
+    const ready = thread.preview.ready_to_close;
+    if (!waiting && !ready) continue;
+    if (seenBuyers.has(thread.customerId)) continue;
+    seenBuyers.add(thread.customerId);
+    readyBuyers.push({
+      ...thread.chat,
+      status: thread.chat.status ?? "hot",
+    });
   }
 
-  const readyBuyers = customers
-    .filter((customer) => customer.ready_to_close)
-    .map((customer) => {
-      const existing = threadByCustomer.get(customer.id);
-      if (existing) {
-        return { ...existing, status: existing.status ?? ("hot" as const) };
-      }
-      return {
-        id: customer.id,
-        name: customer.name.trim() || "Customer",
-        preview: "Ready for you.",
-        time: formatChatTime(customer.updated_at, now),
-        channels: [customer.channel],
-        status: "hot" as const,
-        avatar: avatarFor(customer.name, customer.channel),
-      };
+  for (const customer of customers) {
+    if (!customer.ready_to_close || seenBuyers.has(customer.id)) continue;
+    seenBuyers.add(customer.id);
+    readyBuyers.push({
+      id: customer.id,
+      name: customer.name.trim() || "Customer",
+      preview: "Ready for you.",
+      time: formatChatTime(customer.updated_at, now),
+      channels: [customer.channel],
+      status: "hot",
+      avatar: avatarFor(customer.name, customer.channel),
     });
+  }
 
   const start = Date.UTC(
     now.getUTCFullYear(),
@@ -202,5 +233,58 @@ export function workspaceFromRecords(
       label: channelLabel(item.id),
       count: counts[item.id],
     })),
+    whatsappConnected: whatsapp.connected,
+    whatsappAutoReply: whatsapp.autoReply,
   };
+}
+
+export function liveHighlights(workspace: WorkspaceView) {
+  const lines: string[] = [];
+  const ready = workspace.summary.buyersReady;
+  if (ready > 0) {
+    lines.push(
+      `${ready} ${ready === 1 ? "buyer is" : "buyers are"} ready for you.`,
+    );
+  }
+  for (const buyer of workspace.buyers.slice(0, 3)) {
+    lines.push(`${buyer.name}: ${buyer.preview}`);
+  }
+  if (lines.length === 0) {
+    lines.push(
+      workspace.whatsappConnected
+        ? "No WhatsApp chats are waiting on you."
+        : "Connect WhatsApp in Settings to watch this number.",
+    );
+  }
+  return lines;
+}
+
+export function liveAssistantPrompts(workspace: WorkspaceView) {
+  const waiting = workspace.buyers;
+  const first = waiting[0];
+  const firstName = first?.name.split(" ")[0] ?? "";
+  const who =
+    waiting.length === 0
+      ? "Nobody is waiting on you right now. New WhatsApp messages will show up in the inbox."
+      : `Start here. ${waiting
+          .slice(0, 3)
+          .map((buyer) => `${buyer.name}: ${buyer.preview}`)
+          .join(" ")}`;
+  const handled = workspace.summary.chatsHandled;
+  const ready = workspace.summary.buyersReady;
+  return [
+    { id: "who", label: "Who should I talk to?", reply: who },
+    {
+      id: "today",
+      label: "How was today?",
+      reply: `I handled ${handled} ${handled === 1 ? "chat" : "chats"} today. ${ready} ${ready === 1 ? "buyer is" : "buyers are"} ready for you.`,
+    },
+    {
+      id: "draft",
+      label: first ? `Draft a reply to ${firstName}` : "Draft a reply",
+      reply: first
+        ? `Hi ${firstName}! Thanks for messaging us. I can help with “${first.preview}” Send it from the inbox when you want it to go out on WhatsApp.`
+        : "When a customer messages you, I will draft the reply here. Nothing goes out until you send it from the inbox.",
+    },
+  ];
 }

@@ -29,7 +29,9 @@ export default async function BuyersPage() {
       <p className="mt-1 text-sm leading-5 text-muted">
         {buyers.length === 0
           ? "When someone is ready to close, they will show up here."
-          : `${ready} ${people} ready for a real hello. Profiles arrive in a later step.`}
+          : workspace.source === "live"
+            ? `${ready} ${people} waiting on you. Reply from the inbox.`
+            : `${ready} ${people} ready for a real hello. Profiles arrive in a later step.`}
       </p>
       {buyers.length === 0 ? (
         <div className="px-2 py-10 text-center">
