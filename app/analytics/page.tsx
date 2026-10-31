@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { channelTotals, dailySummary } from "@/lib/demo-data";
+import { loadWorkspace } from "@/lib/db/queries";
 
 export const metadata: Metadata = {
   title: "Analytics",
@@ -12,19 +12,30 @@ const barClass = {
   email: "bg-[#6C8CFF]",
 } as const;
 
-export default function AnalyticsPage() {
+export default async function AnalyticsPage() {
+  const workspace = await loadWorkspace();
+  const { summary, channelTotals } = workspace;
+  const total = channelTotals.reduce((sum, row) => sum + row.count, 0);
+
   return (
     <div className="px-4 pt-2 pb-8">
       <h2 className="text-[1.35rem] font-extrabold tracking-[-0.03em] text-ink">
         Analytics
       </h2>
       <p className="mt-1 text-sm leading-5 text-muted">
-        A friendly peek at today. Live numbers come later.
+        {workspace.source === "demo"
+          ? "A friendly peek at today. Live numbers come later."
+          : "A friendly peek at today."}
       </p>
+      {workspace.notice ? (
+        <p className="mt-3 rounded-[22px] bg-mcw-soft px-3.5 py-3 text-sm leading-5 font-medium text-[#3C3458]">
+          {workspace.notice}
+        </p>
+      ) : null}
       <div className="mt-4 grid grid-cols-2 gap-3">
         <article className="rounded-3xl bg-mcw-soft p-4">
           <p className="text-4xl font-extrabold tracking-tight text-mcw">
-            {dailySummary.chatsHandled}
+            {summary.chatsHandled}
           </p>
           <p className="mt-1 text-sm font-semibold text-[#3C3458]">
             chats I handled
@@ -35,7 +46,7 @@ export default function AnalyticsPage() {
           className="rounded-3xl bg-white p-4 ring-1 ring-[#F0EAF8]"
         >
           <p className="text-4xl font-extrabold tracking-tight text-ink">
-            {dailySummary.buyersReady}
+            {summary.buyersReady}
           </p>
           <p className="mt-1 text-sm font-semibold text-[#3C3458]">
             buyers ready for you
@@ -55,7 +66,7 @@ export default function AnalyticsPage() {
                 <div
                   className={`h-full rounded-full ${barClass[row.channel]}`}
                   style={{
-                    width: `${(row.count / dailySummary.chatsHandled) * 100}%`,
+                    width: `${total === 0 ? 0 : (row.count / total) * 100}%`,
                   }}
                 />
               </div>

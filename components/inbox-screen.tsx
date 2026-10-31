@@ -15,11 +15,10 @@ import { StatusPill } from "@/components/status-pill";
 import {
   channelFilters,
   channelLabel,
-  chats,
-  dailySummary,
   type Channel,
   type Chat,
 } from "@/lib/demo-data";
+import type { WorkspaceSource } from "@/lib/db/inbox";
 
 type StatusFilter = "all" | "needs_you" | "answered" | "followed_up";
 
@@ -30,7 +29,17 @@ const statusFilters: { id: StatusFilter; label: string }[] = [
   { id: "followed_up", label: "Followed up" },
 ];
 
-export function InboxScreen() {
+export function InboxScreen({
+  chats,
+  summary,
+  source,
+  notice,
+}: {
+  chats: Chat[];
+  summary: { chatsHandled: number; buyersReady: number };
+  source: WorkspaceSource;
+  notice: string | null;
+}) {
   const [channel, setChannel] = useState<Channel | "all">("all");
   const [status, setStatus] = useState<StatusFilter>("all");
   const [filterOpen, setFilterOpen] = useState(false);
@@ -103,6 +112,12 @@ export function InboxScreen() {
         })}
       </div>
 
+      {notice ? (
+        <p className="mx-4 mt-3 rounded-[22px] bg-mcw-soft px-3.5 py-3 text-sm leading-5 font-medium text-[#3C3458]">
+          {notice}
+        </p>
+      ) : null}
+
       <Link
         href="/buyers"
         className="mx-4 mt-3 flex items-center gap-3 rounded-[22px] bg-mcw-soft px-3.5 py-3.5"
@@ -110,10 +125,12 @@ export function InboxScreen() {
         <SparklesIcon className="h-9 w-9 shrink-0" />
         <span className="min-w-0 flex-1">
           <span className="block text-[15px] leading-5 font-bold text-[#241C3A]">
-            I handled {dailySummary.chatsHandled} chats today.
+            I handled {summary.chatsHandled}{" "}
+            {summary.chatsHandled === 1 ? "chat" : "chats"} today.
           </span>
           <span className="mt-0.5 block text-[14px] leading-5 font-medium text-[#4A4560]">
-            {dailySummary.buyersReady} buyers ready for you.
+            {summary.buyersReady}{" "}
+            {summary.buyersReady === 1 ? "buyer" : "buyers"} ready for you.
           </span>
         </span>
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#E4DCFF] text-mcw">
@@ -167,15 +184,10 @@ export function InboxScreen() {
       </div>
 
       {visible.length === 0 ? (
-        <div className="px-6 py-14 text-center">
-          <Mascot compact className="mx-auto h-20 w-20" />
-          <p className="mt-3 text-base font-bold text-ink">
-            {"You're all caught up."}
-          </p>
-          <p className="mt-1 text-sm text-muted">
-            Nothing in this filter. Try another channel.
-          </p>
-        </div>
+        <EmptyInbox
+          fresh={source === "live" && chats.length === 0 && !notice}
+          failed={Boolean(notice) && chats.length === 0}
+        />
       ) : (
         <ul className="mt-1 px-2">
           {visible.map((chat) => (
@@ -217,6 +229,27 @@ export function InboxScreen() {
           ))}
         </ul>
       )}
+    </div>
+  );
+}
+
+function EmptyInbox({ fresh, failed }: { fresh: boolean; failed: boolean }) {
+  const title = failed
+    ? "I will try again in a moment."
+    : fresh
+      ? "No chats yet."
+      : "You're all caught up.";
+  const body = failed
+    ? "Your saved chats stay put."
+    : fresh
+      ? "When a customer messages you, the conversation will land here."
+      : "Nothing in this filter. Try another channel.";
+
+  return (
+    <div className="px-6 py-14 text-center">
+      <Mascot compact className="mx-auto h-20 w-20" />
+      <p className="mt-3 text-base font-bold text-ink">{title}</p>
+      <p className="mt-1 text-sm text-muted">{body}</p>
     </div>
   );
 }
