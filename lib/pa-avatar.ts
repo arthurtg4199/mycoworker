@@ -1,3 +1,23 @@
+/** Dot centers on the 1024px portraits. The dots stay dots; nothing here is a sclera. */
+const eyes = {
+  suit: [
+    { x: 0.4279, y: 0.3768 },
+    { x: 0.5716, y: 0.377 },
+  ],
+  navy: [
+    { x: 0.4336, y: 0.3801 },
+    { x: 0.5744, y: 0.3801 },
+  ],
+  plain: [
+    { x: 0.4274, y: 0.3716 },
+    { x: 0.5721, y: 0.3715 },
+  ],
+  purple: [
+    { x: 0.4335, y: 0.3778 },
+    { x: 0.5737, y: 0.3778 },
+  ],
+} as const;
+
 export const PA_AVATARS = [
   {
     id: "pa-glasses-suit-tie",
@@ -6,6 +26,7 @@ export const PA_AVATARS = [
     detail: "Glasses, charcoal suit, purple tie",
     spot: { scale: 1.85, originY: 0.44 },
     picker: { scale: 1.55, originY: 0.5 },
+    eyes: eyes.suit,
   },
   {
     id: "pa-glasses-navy-purple",
@@ -14,6 +35,7 @@ export const PA_AVATARS = [
     detail: "Glasses, navy blazer, purple top",
     spot: { scale: 1.55, originY: 0.4 },
     picker: { scale: 1.28, originY: 0.5 },
+    eyes: eyes.navy,
   },
   {
     id: "pa-suit-tie-noglasses",
@@ -22,6 +44,7 @@ export const PA_AVATARS = [
     detail: "Charcoal suit, purple tie, no glasses",
     spot: { scale: 1.55, originY: 0.4 },
     picker: { scale: 1.28, originY: 0.5 },
+    eyes: eyes.plain,
   },
   {
     id: "pa-glasses-purple-cream",
@@ -30,8 +53,13 @@ export const PA_AVATARS = [
     detail: "Glasses, purple blazer, cream top",
     spot: { scale: 1.55, originY: 0.4 },
     picker: { scale: 1.28, originY: 0.5 },
+    eyes: eyes.purple,
   },
 ] as const;
+
+/** Pupil and skin-cover diameters as a fraction of the 1024px artwork. */
+export const PA_EYE_PUPIL = 33 / 1024;
+export const PA_EYE_COVER = 46 / 1024;
 
 export type PaAvatarId = (typeof PA_AVATARS)[number]["id"];
 export type PaAvatarOption = (typeof PA_AVATARS)[number];
