@@ -23,6 +23,11 @@ export async function updateSession(request: NextRequest) {
   const env = getSupabaseEnv();
   const path = request.nextUrl.pathname;
 
+  // Meta calls this without a signed-in browser session.
+  if (path === "/api/whatsapp/webhook") {
+    return NextResponse.next({ request });
+  }
+
   if (!env) {
     if (path === "/login" || path.startsWith("/login/")) {
       const url = request.nextUrl.clone();

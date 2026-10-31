@@ -3,6 +3,8 @@ import { AuthScreen } from "@/components/auth-screen";
 import { PaAvatarProvider } from "@/components/pa-preference";
 import { SessionProvider } from "@/components/session";
 import { getAuthUser } from "@/lib/auth";
+import { liveHighlights } from "@/lib/db/inbox";
+import { loadWorkspace } from "@/lib/db/queries";
 import { supabaseConfigStatus } from "@/lib/supabase/env";
 
 export function RootFrame({ children }: { children: React.ReactNode }) {
@@ -32,10 +34,19 @@ async function AuthedFrame({ children }: { children: React.ReactNode }) {
     return <AuthScreen />;
   }
 
+  const workspace = await loadWorkspace();
+  const sampleChats = workspace.source === "demo";
+
   return (
     <SessionProvider value={{ demoMode: false, email: user.email }}>
       <PaAvatarProvider>
-        <AppChrome>{children}</AppChrome>
+        <AppChrome
+          sampleChats={sampleChats}
+          whatsappConnected={workspace.whatsappConnected}
+          highlights={sampleChats ? null : liveHighlights(workspace)}
+        >
+          {children}
+        </AppChrome>
       </PaAvatarProvider>
     </SessionProvider>
   );

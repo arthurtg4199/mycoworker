@@ -3,11 +3,16 @@
 import { useState } from "react";
 import { PaAvatar } from "@/components/pa-avatar";
 import { ChooseAssistant } from "@/components/pa-preference";
-import { assistantPrompts } from "@/lib/demo-data";
 
-export function AssistantScreen() {
+export function AssistantScreen({
+  prompts,
+  live,
+}: {
+  prompts: { id: string; label: string; reply: string }[];
+  live: boolean;
+}) {
   const [activeId, setActiveId] = useState<string | null>(null);
-  const active = assistantPrompts.find((prompt) => prompt.id === activeId);
+  const active = prompts.find((prompt) => prompt.id === activeId);
 
   return (
     <div className="px-5 pt-2 pb-8">
@@ -19,11 +24,13 @@ export function AssistantScreen() {
         I handle the chats. You close the deals.
       </p>
       <p className="mt-3 text-center text-sm leading-5 text-muted">
-        Ask about today. I only know the demo inbox for now.
+        {live
+          ? "Ask about today. I am looking at your WhatsApp chats."
+          : "Ask about today. I only know the sample inbox for now."}
       </p>
       <ChooseAssistant />
       <div className="mt-6 flex flex-col gap-2">
-        {assistantPrompts.map((prompt) => {
+        {prompts.map((prompt) => {
           const selected = prompt.id === activeId;
           return (
             <button

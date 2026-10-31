@@ -22,7 +22,17 @@ const tabs = [
   { href: "/settings", label: "Settings" },
 ] as const;
 
-export function AppChrome({ children }: { children: React.ReactNode }) {
+export function AppChrome({
+  children,
+  sampleChats = false,
+  whatsappConnected = false,
+  highlights = null,
+}: {
+  children: React.ReactNode;
+  sampleChats?: boolean;
+  whatsappConnected?: boolean;
+  highlights?: string[] | null;
+}) {
   const pathname = usePathname();
   const { demoMode } = useSession();
   const [panel, setPanel] = useState<"bell" | "menu" | null>(null);
@@ -85,6 +95,13 @@ export function AppChrome({ children }: { children: React.ReactNode }) {
       {demoMode ? (
         <p className="shrink-0 px-4 pb-2 text-center text-[11px] font-semibold text-mcw">
           Demo mode
+        </p>
+      ) : sampleChats ? (
+        <p className="shrink-0 px-4 pb-2 text-center text-[11px] font-semibold text-mcw">
+          Sample chats ·{" "}
+          <Link href="/settings" className="underline">
+            Connect WhatsApp
+          </Link>
         </p>
       ) : null}
 
@@ -149,7 +166,15 @@ export function AppChrome({ children }: { children: React.ReactNode }) {
             aria-label={openPanel === "bell" ? "Notifications" : "About MyCoWorker"}
             className="absolute top-[4.5rem] right-3 left-3 z-50 rounded-3xl bg-white p-4 shadow-[0_18px_50px_rgba(40,20,80,0.16)] ring-1 ring-black/5"
           >
-            {openPanel === "bell" ? <BellPanel /> : <MenuPanel />}
+            {openPanel === "bell" ? (
+              <BellPanel notes={highlights} />
+            ) : (
+              <MenuPanel
+                demoMode={demoMode}
+                sampleChats={sampleChats}
+                whatsappConnected={whatsappConnected}
+              />
+            )}
           </div>
         </>
       ) : null}
@@ -157,8 +182,8 @@ export function AppChrome({ children }: { children: React.ReactNode }) {
   );
 }
 
-function BellPanel() {
-  const notes = [
+function BellPanel({ notes }: { notes: string[] | null }) {
+  const items = notes ?? [
     "3 buyers are ready for you.",
     "James Carter asked about blue, size 10.",
     "Ryan Thompson wants to schedule a call.",
@@ -168,7 +193,7 @@ function BellPanel() {
     <div>
       <p className="text-sm font-bold text-ink">Today</p>
       <ul className="mt-3 space-y-2.5">
-        {notes.map((note) => (
+        {items.map((note) => (
           <li key={note} className="text-sm leading-5 text-[#3C3A46]">
             {note}
           </li>
@@ -178,7 +203,22 @@ function BellPanel() {
   );
 }
 
-function MenuPanel() {
+function MenuPanel({
+  demoMode,
+  sampleChats,
+  whatsappConnected,
+}: {
+  demoMode: boolean;
+  sampleChats: boolean;
+  whatsappConnected: boolean;
+}) {
+  const note = demoMode
+    ? "This is a preview. Chats stay on this screen, and nothing is connected yet."
+    : whatsappConnected
+      ? "WhatsApp is connected. A reply you send from the inbox goes out on WhatsApp. I still ask you first unless auto-reply is on in Settings."
+      : sampleChats
+        ? "These are sample chats. Connect WhatsApp in Settings to use your own number."
+        : "WhatsApp is not connected. Saved chats stay here. Connect the number in Settings to receive new ones.";
   return (
     <div className="text-center">
       <Image
@@ -194,10 +234,7 @@ function MenuPanel() {
       <p className="mt-2 text-xs font-medium tracking-wide text-muted uppercase">
         By OKEREX
       </p>
-      <p className="mt-3 text-sm leading-5 text-[#5C5870]">
-        This is a preview. Chats stay on this screen, and nothing is connected
-        yet.
-      </p>
+      <p className="mt-3 text-sm leading-5 text-[#5C5870]">{note}</p>
     </div>
   );
 }

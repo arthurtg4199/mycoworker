@@ -2,10 +2,12 @@ import type { PostgrestError } from "@supabase/supabase-js";
 import { cache } from "react";
 import {
   demoWorkspace,
+  sampleWorkspace,
   unavailableWorkspace,
   workspaceFromRecords,
   type WorkspaceView,
 } from "@/lib/db/inbox";
+import { getWhatsAppConnection } from "@/lib/whatsapp/store";
 import type {
   Appointment,
   AppointmentInput,
@@ -373,19 +375,28 @@ async function listChatPreviewsOn(db: Db): Promise<ChatPreview[]> {
 }
 
 /**
- * Demo inbox when Supabase is unset. Saved rows when it is set.
- * A failed read stays empty instead of mixing demo people into a real account.
+ * Demo inbox when Supabase is unset.
+ * A signed-in account with no rows and WhatsApp disconnected stays on sample chats.
+ * Saved rows replace the sample once any customer or chat exists, or WhatsApp is connected.
+ * A failed read stays empty instead of mixing sample people into a broken account.
  */
 export const loadWorkspace = cache(async (): Promise<WorkspaceView> => {
   if (!getSupabaseEnv()) return demoWorkspace();
 
   try {
     const db = await database();
-    const [customers, previews] = await Promise.all([
+    const [customers, previews, connection] = await Promise.all([
       listCustomersOn(db),
       listChatPreviewsOn(db),
+      getWhatsAppConnection(),
     ]);
-    return workspaceFromRecords(customers, previews);
+    if (!connection && customers.length === 0 && previews.length === 0) {
+      return sampleWorkspace();
+    }
+    return workspaceFromRecords(customers, previews, new Date(), {
+      connected: Boolean(connection),
+      autoReply: connection?.autoReply ?? false,
+    });
   } catch (error) {
     if (error instanceof DatabaseNotConfiguredError) return demoWorkspace();
     console.error(

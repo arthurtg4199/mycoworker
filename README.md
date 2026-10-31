@@ -30,15 +30,53 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-Copy `.env.example` to `.env.local` and fill in the two Supabase values to try sign-in. Leave them blank to stay in demo mode.
+Copy `.env.example` to `.env.local` and fill in the two Supabase values to try sign-in. Leave them blank to stay in demo mode. WhatsApp needs the Meta values in that same file, and it stays disconnected until a signed-in business connects a number in Settings.
 
 ## Database
 
-Apply `supabase/migrations/20261031120000_business_tables.sql` in the Supabase SQL editor, or with the Supabase CLI (`supabase db push`).
+Apply `supabase/migrations/20261031120000_business_tables.sql` and then `supabase/migrations/20261031150000_whatsapp_connections.sql` in the Supabase SQL editor, or with the Supabase CLI (`supabase db push`).
 
 The migration creates `customers`, `chats`, `messages`, `appointments`, and `payments`, plus a `chat_previews` view for the inbox. Row level security is on for every table. A signed-in user can only read and write their own rows. Messages are visible only when the parent chat belongs to that user. No rows are seeded.
 
-`lib/db/queries.ts` reads and writes those tables with the anon key and the signed-in session. The service role key is not used. When the URL or anon key is missing, the helpers stay unused and the demo inbox stays as it is. When they are set and a query fails, the inbox stays empty and asks you to refresh, instead of showing the demo people inside a real account.
+`lib/db/queries.ts` reads and writes those tables with the anon key and the signed-in session. The service role key is not used. When the URL or anon key is missing, the helpers stay unused and the demo inbox stays as it is. When they are set and a query fails, the inbox stays empty and asks you to refresh, instead of showing the sample people inside a broken account. A signed-in account with no rows, and WhatsApp not connected, still shows the sample inbox. Connecting WhatsApp, or any saved chat, switches the inbox to that account's rows.
+
+## WhatsApp
+
+Settings → Channels links a WhatsApp Business number through the Cloud API. Three ways, in the order the screen offers them:
+
+1. **Connect with Meta** when `META_APP_ID` and `META_APP_SECRET` are set. If `META_EMBEDDED_SIGNUP_CONFIG_ID` is also set, this opens embedded signup v4. Otherwise it asks for the WhatsApp OAuth scopes.
+2. **Use the number saved on the server** when `WHATSAPP_ACCESS_TOKEN` and `WHATSAPP_PHONE_NUMBER_ID` are set. The token stays in the server environment and is not copied into the database.
+3. **Paste a Cloud API token** plus the phone number ID. Meta is asked to confirm the pair before it is saved.
+
+Inbound messages hit `POST /api/whatsapp/webhook`. The route checks `X-Hub-Signature-256` with `META_APP_SECRET`, then saves the customer, chat, and message for the signed-in business that connected that phone number ID. A buying-intent message is marked hot and ready for you. Anything else is marked your turn. The owner replies from the inbox. Nothing is sent until they tap Send, unless auto-reply is turned on in Settings. Auto-reply is off by default and only sends one short acknowledgement. This app does not send template messages.
+
+The webhook write goes through `mcw_ingest_whatsapp`, which checks `WEBHOOK_VERIFY_TOKEN` before it inserts. The anon key alone cannot forge a chat. Open Settings once after you change that token so the saved hash stays in step.
+
+Instagram and email stay unconnected. They can share this Meta app later.
+
+### What to click in the Meta Developer Console
+
+Do this in [developers.facebook.com](https://developers.facebook.com/). Stay in Development mode. Do not buy a number, add a payment method, or publish the app until that is an explicit decision.
+
+1. **My Apps → Create App**. Choose the Business type. Name it MyCoWorker.
+2. **App settings → Basic**. Copy the App ID into `META_APP_ID`. Show the App secret and copy it into `META_APP_SECRET`.
+3. **Add product → WhatsApp**. Open **WhatsApp → API Setup**. Copy the **Phone number ID** into `WHATSAPP_PHONE_NUMBER_ID` and a token into `WHATSAPP_ACCESS_TOKEN`. The token on that screen is temporary. For a longer one: **Business settings → Users → System users → Generate token**, with `whatsapp_business_messaging` and `whatsapp_business_management`.
+4. **WhatsApp → Configuration** (or the Webhooks product). Callback URL: `https://<your-host>/api/whatsapp/webhook`. Verify token: the same string as `WEBHOOK_VERIFY_TOKEN`. Subscribe to the **messages** field.
+5. **Facebook Login for Business → Settings → Valid OAuth Redirect URIs**. Add `https://<your-host>/api/whatsapp/callback` (and `http://localhost:3000/api/whatsapp/callback` for local).
+6. Optional embedded signup: **Facebook Login for Business → Configurations → Create**. Choose WhatsApp. Copy the Configuration ID into `META_EMBEDDED_SIGNUP_CONFIG_ID`.
+7. On the API Setup screen, add your own phone under **To** so the free test number is allowed to message it. Development mode only delivers to numbers on that list.
+
+Apply the WhatsApp migration, set the env vars, redeploy, sign in, and open Settings → Connect. The test number can message the allow list. It cannot reach the public.
+
+### Before real Nigerian customers
+
+These need an explicit OK. This app does not do them.
+
+- Switch the Meta app from Development to Live, or submit App Review for advanced access.
+- Business verification. Meta usually asks for the CAC certificate of incorporation, a proof of address, and a director's ID.
+- Display-name approval for the WhatsApp business profile.
+- A phone number that is not already on the WhatsApp or WhatsApp Business app. Use a number the business already owns. Buying a new number is a separate cost.
+- A payment method on the WhatsApp Business account. Session replies inside the customer-care window are the only sends here. Template messages, which can be billed, are not implemented.
 
 ```bash
 npm run build
@@ -53,7 +91,8 @@ Import this repository. Framework preset: **Next.js**. Vercel deploys from `main
 
 In the Vercel project, open Settings → Environment Variables.
 Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` from the Supabase project (Project Settings → API).
-Redeploy after saving them. Leave both unset and the site stays in demo mode.
+For WhatsApp, also add `META_APP_ID`, `META_APP_SECRET`, `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, and `WEBHOOK_VERIFY_TOKEN`. `META_EMBEDDED_SIGNUP_CONFIG_ID` is optional.
+Redeploy after saving them. Leave the Supabase pair unset and the site stays in demo mode. Leave the Meta values unset and WhatsApp stays disconnected.
 
 After deploy, the site can be installed to a phone home screen from the browser menu.
 

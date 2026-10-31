@@ -14,6 +14,8 @@ export default async function InboxPage() {
       summary={workspace.summary}
       source={workspace.source}
       notice={workspace.notice}
+      whatsappConnected={workspace.whatsappConnected}
+      whatsappAutoReply={workspace.whatsappAutoReply}
     />
   );
 }
