@@ -5,10 +5,10 @@ import { PaAvatar } from "@/components/pa-avatar";
 
 export function AssistantScreen({
   prompts,
-  live,
+  intro,
 }: {
   prompts: { id: string; label: string; reply: string }[];
-  live: boolean;
+  intro: string;
 }) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const active = prompts.find((prompt) => prompt.id === activeId);
@@ -22,11 +22,7 @@ export function AssistantScreen({
       <p className="mt-2 text-center text-[15px] leading-6 font-medium text-[#4A4560]">
         I handle the chats. You close the deals.
       </p>
-      <p className="mt-3 text-center text-sm leading-5 text-muted">
-        {live
-          ? "Ask about today. I am looking at your WhatsApp chats."
-          : "Ask about today. I only know the sample inbox for now."}
-      </p>
+      <p className="mt-3 text-center text-sm leading-5 text-muted">{intro}</p>
       <div className="mt-6 flex flex-col gap-2">
         {prompts.map((prompt) => {
           const selected = prompt.id === activeId;

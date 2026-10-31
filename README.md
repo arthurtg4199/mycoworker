@@ -12,13 +12,13 @@ This is a mobile-first app shell. Without Supabase settings it runs in demo mode
 - Tailwind CSS
 - Installable PWA (web manifest, icons, and a small service worker)
 - Supabase email sign-in, when the public URL and anon key are set
-- Supabase Postgres for customers, chats, messages, appointments, and payments
+- Supabase Postgres for the business profile, customers, chats, messages, appointments, and payments
 
 ## Screens
 
 - **Sign in** — email and password, shown when the Supabase URL and anon key are set
 - **Inbox** — daily summary (“I handled 42 chats today. 3 buyers ready for you.”), channel chips, status tags, and demo threads
-- **Buyers**, **Analytics**, **Settings** — friendly placeholders. Settings includes sign out once you are signed in
+- **Buyers**, **Analytics**, **Settings** — buyers and analytics follow the inbox. Settings is where you name the shop, pick the assistant picture, and sign out
 - **Talk to MyCoWorker** — assistant button with the corporate PA portrait you picked in Settings.
 
 ## Run locally
@@ -34,11 +34,17 @@ Copy `.env.example` to `.env.local` and fill in the two Supabase values to try s
 
 ## Database
 
-Apply `supabase/migrations/20261031120000_business_tables.sql` and then `supabase/migrations/20261031150000_whatsapp_connections.sql` in the Supabase SQL editor, or with the Supabase CLI (`supabase db push`).
+Apply these in order in the Supabase SQL editor, or with the Supabase CLI (`supabase db push`):
 
-The migration creates `customers`, `chats`, `messages`, `appointments`, and `payments`, plus a `chat_previews` view for the inbox. Row level security is on for every table. A signed-in user can only read and write their own rows. Messages are visible only when the parent chat belongs to that user. No rows are seeded.
+1. `supabase/migrations/20261031120000_business_tables.sql`
+2. `supabase/migrations/20261031150000_whatsapp_connections.sql`
+3. `supabase/migrations/20261031220000_business_profiles.sql`
 
-`lib/db/queries.ts` reads and writes those tables with the anon key and the signed-in session. The service role key is not used. When the URL or anon key is missing, the helpers stay unused and the demo inbox stays as it is. When they are set and a query fails, the inbox stays empty and asks you to refresh, instead of showing the sample people inside a broken account. A signed-in account with no rows, and WhatsApp not connected, still shows the sample inbox. Connecting WhatsApp, or any saved chat, switches the inbox to that account's rows.
+The first migration creates `customers`, `chats`, `messages`, `appointments`, and `payments`, plus a `chat_previews` view for the inbox. The third adds `business_profiles`, one row per owner: shop name, what they sell, hours, city, reply style, and an optional currency. Row level security is on for every table. A signed-in user can only read and write their own rows. Messages are visible only when the parent chat belongs to that user. No rows are seeded.
+
+Settings → Your shop saves that profile. Without Supabase, the form keeps a sample shop on this device. With Supabase, each account starts blank until they save. The assistant greeting, an empty inbox, and the menu use the saved shop name. The sample inbox is unchanged until there is a real profile.
+
+`lib/db/queries.ts` and `lib/db/profile.ts` read and write those tables with the anon key and the signed-in session. The service role key is not used. When the URL or anon key is missing, the inbox stays on the sample chats and the shop form keeps its edits on this device. When they are set and a query fails, the inbox stays empty and asks you to refresh, instead of showing the sample people inside a broken account. A signed-in account with no rows, and WhatsApp not connected, still shows the sample inbox. Connecting WhatsApp, or any saved chat, switches the inbox to that account's rows.
 
 ## WhatsApp
 

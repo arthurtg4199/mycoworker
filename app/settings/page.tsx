@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { AccountSettings } from "@/components/account-settings";
+import { BusinessProfileForm } from "@/components/business-profile-form";
 import { ChannelIcon } from "@/components/icons";
 import { ChooseAssistant } from "@/components/pa-preference";
 import { WhatsAppConnect } from "@/components/whatsapp-connect";
+import { demoProfileFields, fieldsFromProfile } from "@/lib/business-profile";
+import { loadBusinessProfile } from "@/lib/db/profile";
 import { channelFilters } from "@/lib/demo-data";
 import { siteOrigin } from "@/lib/http/origin";
 import { getSupabaseEnv } from "@/lib/supabase/env";
@@ -43,16 +46,19 @@ export default async function SettingsPage({
   searchParams,
 }: PageProps<"/settings">) {
   const query = await searchParams;
-  const [connection, config, origin] = await Promise.all([
+  const [connection, config, origin, shop] = await Promise.all([
     getWhatsAppConnection(),
     readWhatsAppConfig(),
     siteOrigin(),
+    loadBusinessProfile(),
   ]);
   if (connection && config.webhookReady) {
     await syncIngestHash();
   }
 
   const laterChannels = channelFilters.filter((channel) => channel.id !== "whatsapp");
+  const shopFields =
+    shop.source === "demo" ? demoProfileFields() : fieldsFromProfile(shop.profile);
 
   return (
     <div className="px-4 pt-2 pb-10">
@@ -76,13 +82,11 @@ export default async function SettingsPage({
 
       <AccountSettings />
 
-      <section className="mt-4 rounded-3xl bg-white p-4 ring-1 ring-[#F0EAF8]">
-        <h3 className="text-sm font-bold text-ink">Your shop</h3>
-        <p className="mt-1 text-base font-semibold text-ink">Your business</p>
-        <p className="mt-1 text-sm leading-5 text-muted">
-          You will name the shop in a later step.
-        </p>
-      </section>
+      <BusinessProfileForm
+        mode={shop.source}
+        initial={shopFields}
+        notice={shop.notice}
+      />
 
       <section className="mt-3">
         <h3 className="px-1 text-sm font-bold text-ink">Channels</h3>

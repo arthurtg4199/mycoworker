@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Avatar } from "@/components/avatar";
 import { PaAvatar } from "@/components/pa-avatar";
 import { StatusPill } from "@/components/status-pill";
+import { loadBusinessProfile, shopFacts } from "@/lib/db/profile";
 import { loadWorkspace } from "@/lib/db/queries";
 import { channelLabel } from "@/lib/demo-data";
 
@@ -11,8 +12,12 @@ export const metadata: Metadata = {
 };
 
 export default async function BuyersPage() {
-  const workspace = await loadWorkspace();
+  const [workspace, profile] = await Promise.all([
+    loadWorkspace(),
+    loadBusinessProfile(),
+  ]);
   const buyers = workspace.buyers;
+  const shopName = shopFacts(profile)?.business_name ?? null;
   const ready = workspace.summary.buyersReady;
   const people = ready === 1 ? "person is" : "people are";
 
@@ -28,7 +33,9 @@ export default async function BuyersPage() {
       ) : null}
       <p className="mt-1 text-sm leading-5 text-muted">
         {buyers.length === 0
-          ? "When someone is ready to close, they will show up here."
+          ? shopName
+            ? `When someone is ready to buy from ${shopName}, they will show up here.`
+            : "When someone is ready to close, they will show up here."
           : workspace.source === "live"
             ? `${ready} ${people} waiting on you. Reply from the inbox.`
             : `${ready} ${people} ready for a real hello. Profiles arrive in a later step.`}

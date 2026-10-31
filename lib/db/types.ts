@@ -1,3 +1,4 @@
+import type { ReplyTone } from "@/lib/business-profile";
 import type { Channel } from "@/lib/demo-data";
 
 export type { Channel };
@@ -134,6 +135,27 @@ export type PaymentPatch = {
   confirmed_at?: string | null;
 };
 
+export type BusinessProfile = {
+  user_id: string;
+  business_name: string;
+  what_they_sell: string | null;
+  hours: string | null;
+  location: string | null;
+  reply_tone: ReplyTone | null;
+  currency: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type BusinessProfileInput = {
+  business_name: string;
+  what_they_sell?: string | null;
+  hours?: string | null;
+  location?: string | null;
+  reply_tone?: string | null;
+  currency?: string | null;
+};
+
 export type WhatsAppTokenSource = "pasted" | "oauth" | "env";
 
 export type WhatsAppConnectionStatus = "connected" | "disconnected";
@@ -226,6 +248,18 @@ type PaymentRow = {
   currency: string;
   status: PaymentStatus;
   confirmed_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type BusinessProfileRow = {
+  user_id: string;
+  business_name: string;
+  what_they_sell: string | null;
+  hours: string | null;
+  location: string | null;
+  reply_tone: string | null;
+  currency: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -392,6 +426,31 @@ export type Database = {
           currency?: string;
           status?: PaymentStatus;
           confirmed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        }
+      >;
+      business_profiles: Table<
+        BusinessProfileRow,
+        {
+          user_id?: string;
+          business_name: string;
+          what_they_sell?: string | null;
+          hours?: string | null;
+          location?: string | null;
+          reply_tone?: string | null;
+          currency?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        },
+        {
+          user_id?: string;
+          business_name?: string;
+          what_they_sell?: string | null;
+          hours?: string | null;
+          location?: string | null;
+          reply_tone?: string | null;
+          currency?: string | null;
           created_at?: string;
           updated_at?: string;
         }

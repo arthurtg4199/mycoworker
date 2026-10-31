@@ -40,6 +40,7 @@ export function InboxScreen({
   notice,
   whatsappConnected,
   whatsappAutoReply,
+  businessName = null,
 }: {
   chats: Chat[];
   summary: { chatsHandled: number; buyersReady: number };
@@ -47,6 +48,7 @@ export function InboxScreen({
   notice: string | null;
   whatsappConnected: boolean;
   whatsappAutoReply: boolean;
+  businessName?: string | null;
 }) {
   const [channel, setChannel] = useState<Channel | "all">("all");
   const [status, setStatus] = useState<StatusFilter>("all");
@@ -200,6 +202,7 @@ export function InboxScreen({
           fresh={source === "live" && chats.length === 0 && !notice}
           failed={Boolean(notice) && chats.length === 0}
           whatsappConnected={whatsappConnected}
+          businessName={businessName}
         />
       ) : (
         <ul className="mt-1 px-2">
@@ -250,11 +253,14 @@ function EmptyInbox({
   fresh,
   failed,
   whatsappConnected,
+  businessName,
 }: {
   fresh: boolean;
   failed: boolean;
   whatsappConnected: boolean;
+  businessName: string | null;
 }) {
+  const shop = businessName?.trim() || null;
   const title = failed
     ? "I will try again in a moment."
     : fresh
@@ -264,8 +270,12 @@ function EmptyInbox({
     ? "Your saved chats stay put."
     : fresh
       ? whatsappConnected
-        ? "WhatsApp is connected. A new message to your number will show up here."
-        : "When a customer messages you, the conversation will land here."
+        ? shop
+          ? `WhatsApp is connected for ${shop}. A new message will show up here.`
+          : "WhatsApp is connected. A new message to your number will show up here."
+        : shop
+          ? `When a customer messages ${shop}, the conversation will land here.`
+          : "When a customer messages you, the conversation will land here."
       : "Nothing in this filter. Try another channel.";
 
   return (
