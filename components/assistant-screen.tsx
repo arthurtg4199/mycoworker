@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { PaAvatar } from "@/components/pa-avatar";
-import { ChooseAssistant } from "@/components/pa-preference";
 import { assistantPrompts } from "@/lib/demo-data";
 
 export function AssistantScreen() {
@@ -21,7 +20,6 @@ export function AssistantScreen() {
       <p className="mt-3 text-center text-sm leading-5 text-muted">
         Ask about today. I only know the demo inbox for now.
       </p>
-      <ChooseAssistant />
       <div className="mt-6 flex flex-col gap-2">
         {assistantPrompts.map((prompt) => {
           const selected = prompt.id === activeId;

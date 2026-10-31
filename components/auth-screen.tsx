@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { signIn, signUp } from "@/app/auth/actions";
+import { ChooseAssistant } from "@/components/pa-preference";
 
 type Mode = "sign-in" | "sign-up";
 
@@ -94,6 +95,7 @@ export function AuthScreen({ setup }: { setup?: "incomplete" }) {
                 ? "Sign in with your email to open the inbox."
                 : "Use your email and a password. Then the inbox is yours."}
             </p>
+            {mode === "sign-up" && !confirmEmail ? <ChooseAssistant /> : null}
 
             {confirmEmail ? (
               <div className="mt-6 rounded-3xl bg-mcw-soft px-4 py-5 text-center">
