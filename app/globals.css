@@ -49,8 +49,19 @@ body {
   border-radius: 999px;
 }
 
-.mcw-pa-idle {
-  animation: mcw-pa-idle 6s ease-in-out infinite;
+.mcw-pa-stage {
+  --pa-hx: 0px;
+  --pa-hy: 0px;
+  --pa-rot: 0deg;
+  --pa-scale: 1;
+  --pa-px: 0%;
+  --pa-py: 0%;
+}
+
+.mcw-pa-head {
+  transform: translate3d(var(--pa-hx), var(--pa-hy), 0) rotate(var(--pa-rot))
+    scale(var(--pa-scale));
+  transform-origin: 50% 72%;
 }
 
 .mcw-pa-eye {
@@ -59,18 +70,7 @@ body {
 }
 
 .mcw-pa-pupil {
-  transform-origin: center;
-  animation: mcw-pa-look 7.2s ease-in-out infinite;
-}
-
-@keyframes mcw-pa-idle {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-2px);
-  }
+  transform: translate(var(--pa-px), var(--pa-py));
 }
 
 @keyframes mcw-pa-blink {
@@ -93,29 +93,38 @@ body {
   }
 }
 
-@keyframes mcw-pa-look {
+@keyframes mcw-pa-dot {
   0%,
-  12%,
+  80%,
   100% {
-    transform: translate(0, 0);
+    opacity: 0.25;
+    transform: translateY(0);
   }
-  26%,
-  44% {
-    transform: translate(-62%, 16%);
-  }
-  58%,
-  76% {
-    transform: translate(64%, 12%);
-  }
-  88% {
-    transform: translate(8%, -20%);
+  40% {
+    opacity: 1;
+    transform: translateY(-1px);
   }
 }
 
+.mcw-pa-typing span {
+  animation: mcw-pa-dot 1.05s ease-in-out infinite;
+}
+
+.mcw-pa-typing span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.mcw-pa-typing span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .mcw-pa-idle,
   .mcw-pa-eye,
-  .mcw-pa-pupil {
+  .mcw-pa-typing span {
     animation: none;
+  }
+
+  .mcw-pa-head {
+    transform: none;
   }
 }

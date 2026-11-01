@@ -209,7 +209,7 @@ export function AppChrome({
 
       <main
         id="app-main"
-        className={`mcw-scroll min-h-0 flex-1 overflow-y-auto ${showTalk ? "pb-24" : "pb-6"}`}
+        className={`mcw-scroll flex min-h-0 flex-1 flex-col overflow-y-auto ${showTalk ? "pb-24" : "pb-6"}`}
       >
         {children}
       </main>
