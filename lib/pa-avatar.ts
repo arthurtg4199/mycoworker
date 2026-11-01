@@ -59,7 +59,7 @@ export const PA_AVATARS = [
 
 /** Pupil and skin-cover diameters as a fraction of the 1024px artwork. */
 export const PA_EYE_PUPIL = 33 / 1024;
-export const PA_EYE_COVER = 46 / 1024;
+export const PA_EYE_COVER = 58 / 1024;
 
 export type PaAvatarId = (typeof PA_AVATARS)[number]["id"];
 export type PaAvatarOption = (typeof PA_AVATARS)[number];

@@ -50,18 +50,19 @@ body {
 }
 
 .mcw-pa-stage {
-  --pa-hx: 0px;
-  --pa-hy: 0px;
-  --pa-rot: 0deg;
+  --pa-shift-x: 0px;
+  --pa-shift-y: 0px;
+  --pa-yaw: 0deg;
+  --pa-pitch: 0deg;
   --pa-scale: 1;
   --pa-px: 0%;
   --pa-py: 0%;
 }
 
 .mcw-pa-head {
-  transform: translate3d(var(--pa-hx), var(--pa-hy), 0) rotate(var(--pa-rot))
-    scale(var(--pa-scale));
-  transform-origin: 50% 72%;
+  transform: perspective(320px) translate3d(var(--pa-shift-x), var(--pa-shift-y), 0)
+    rotateY(var(--pa-yaw)) rotateX(var(--pa-pitch)) scale(var(--pa-scale));
+  transform-origin: 50% 46%;
 }
 
 .mcw-pa-eye {
