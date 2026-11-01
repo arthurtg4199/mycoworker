@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useSyncExternalStore } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import {
   paAvatarById,
   readStoredPaAvatar,
@@ -11,6 +11,10 @@ import {
   PA_EYE_PUPIL,
   type PaAvatarOption,
 } from "@/lib/pa-avatar";
+import {
+  subscribePaPose,
+  type PaPresence,
+} from "@/lib/pa-motion";
 
 const sizeClass = {
   hero: "h-16 w-16",
@@ -66,10 +70,7 @@ function PaEyes({ eyes }: { eyes: PaAvatarOption["eyes"] }) {
           }}
         >
           <span className="mcw-pa-eye block h-full w-full">
-            <span
-              className="mcw-pa-pupil block h-full w-full rounded-full"
-              style={{ background: INK }}
-            />
+            <span className="mcw-pa-pupil block h-full w-full rounded-full" style={{ background: INK }} />
           </span>
         </span>
       ))}
@@ -80,38 +81,65 @@ function PaEyes({ eyes }: { eyes: PaAvatarOption["eyes"] }) {
 export function PaPortrait({
   avatar,
   crop = "spot",
-  idle = false,
   lively = false,
+  animate = true,
+  presence = "rest",
   className,
 }: {
   avatar: PaAvatarOption;
   crop?: "spot" | "picker";
-  idle?: boolean;
   lively?: boolean;
+  animate?: boolean;
+  presence?: PaPresence;
   className?: string;
 }) {
   const frame = crop === "picker" ? avatar.picker : avatar.spot;
+  const stageRef = useRef<HTMLSpanElement>(null);
+  const presenceRef = useRef(presence);
+
+  useEffect(() => {
+    presenceRef.current = presence;
+  }, [presence]);
+
+  useEffect(() => {
+    if (!lively || !animate) return;
+    const node = stageRef.current;
+    if (!node) return;
+    return subscribePaPose(
+      () => presenceRef.current,
+      (pose) => {
+        node.style.setProperty("--pa-hx", `${pose.hx.toFixed(2)}px`);
+        node.style.setProperty("--pa-hy", `${pose.hy.toFixed(2)}px`);
+        node.style.setProperty("--pa-rot", `${pose.rot.toFixed(2)}deg`);
+        node.style.setProperty("--pa-scale", pose.scale.toFixed(3));
+        node.style.setProperty("--pa-px", `${pose.px.toFixed(2)}%`);
+        node.style.setProperty("--pa-py", `${pose.py.toFixed(2)}%`);
+      },
+    );
+  }, [lively, animate]);
+
   return (
     <span
-      className={`relative block overflow-hidden bg-[#F3F0FA] ${
-        idle ? "mcw-pa-idle" : ""
-      } ${className ?? ""}`}
+      ref={stageRef}
+      className={`mcw-pa-stage relative block overflow-hidden bg-[#F3F0FA] ${className ?? ""}`}
     >
-      <span
-        className="absolute inset-0"
-        style={{
-          transform: `scale(${frame.scale})`,
-          transformOrigin: `50% ${frame.originY * 100}%`,
-        }}
-      >
-        <Image
-          src={avatar.src}
-          alt=""
-          fill
-          sizes="96px"
-          className="object-cover"
-        />
-        {lively ? <PaEyes eyes={avatar.eyes} /> : null}
+      <span className="mcw-pa-head absolute inset-0">
+        <span
+          className="absolute inset-0"
+          style={{
+            transform: `scale(${frame.scale})`,
+            transformOrigin: `50% ${frame.originY * 100}%`,
+          }}
+        >
+          <Image
+            src={avatar.src}
+            alt=""
+            fill
+            sizes="96px"
+            className="object-cover"
+          />
+          {lively ? <PaEyes eyes={avatar.eyes} /> : null}
+        </span>
       </span>
     </span>
   );
@@ -119,11 +147,14 @@ export function PaPortrait({
 
 export function PaAvatar({
   size = "inline",
-  idle = false,
+  presence = "rest",
+  live = true,
   className,
 }: {
   size?: PaAvatarSize;
-  idle?: boolean;
+  presence?: PaPresence;
+  /** When false, the dot eyes stay put and still blink. */
+  live?: boolean;
   className?: string;
 }) {
   const avatar = useSelectedPaAvatar();
@@ -131,7 +162,8 @@ export function PaAvatar({
     <PaPortrait
       avatar={avatar}
       lively
-      idle={idle && size === "hero"}
+      animate={live}
+      presence={presence}
       className={`shrink-0 rounded-full ring-1 ring-[#E4DCFF] ${sizeClass[size]} ${className ?? ""}`}
     />
   );

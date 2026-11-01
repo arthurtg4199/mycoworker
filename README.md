@@ -19,7 +19,7 @@ This is a mobile-first app shell. Without Supabase settings it runs in demo mode
 - **Sign in** — email and password, shown when the Supabase URL and anon key are set
 - **Inbox** — daily summary (“I handled 42 chats today. 3 buyers ready for you.”), a morning check-in (“Here's what needs you today”), channel chips, status tags, and demo threads
 - **Buyers**, **Analytics**, **Settings** — buyers and analytics follow the inbox. Settings is where you name the shop, pick the assistant picture, choose how chats are handled, and sign out
-- **Talk to MyCoWorker** — assistant button with the corporate PA portrait you picked in Settings. The same morning check-in sits on that screen.
+- **Talk to MyCoWorker** — a private chat with the assistant, separate from the customer inbox. The portrait you picked in Settings sits in the header and beside replies. You can type, or tap a starter. Demo mode keeps the thread on this device. A signed-in account saves it. The morning check-in still sits at the top of that screen.
 - **Nudges** — the bell lists hot buyers, follow-ups, unanswered customers, and the daily check-in. The header shows Ask me first, Auto-reply, or Paused.
 
 ## Run locally
@@ -41,12 +41,15 @@ Apply these in order in the Supabase SQL editor, or with the Supabase CLI (`supa
 2. `supabase/migrations/20261031150000_whatsapp_connections.sql`
 3. `supabase/migrations/20261031220000_business_profiles.sql`
 4. `supabase/migrations/20261101170000_assistant_nudges.sql`
+5. `supabase/migrations/20261101190000_coworker_messages.sql`
 
 The first migration creates `customers`, `chats`, `messages`, `appointments`, and `payments`, plus a `chat_previews` view for the inbox. The third adds `business_profiles`, one row per owner: shop name, what they sell, hours, city, reply style, and an optional currency. Row level security is on for every table. A signed-in user can only read and write their own rows. Messages are visible only when the parent chat belongs to that user. No rows are seeded.
 
 Settings → Your shop saves that profile. Without Supabase, the form keeps a sample shop on this device. With Supabase, each account starts blank until they save. The assistant greeting, an empty inbox, and the menu use the saved shop name. The sample inbox is unchanged until there is a real profile.
 
 The fourth migration adds `assistant_settings` and `nudges`. `assistant_settings` is one row per owner: `ask_first` (default), `auto_reply`, or `paused`. With no row, the app behaves as Ask me first. `nudges` stores in-app reminders only (hot buyer, follow-up, unanswered, and one morning check-in per UTC day). Row level security keeps both tables to the signed-in user. A customer or chat on a nudge must belong to that same user. Demo mode builds nudges from the sample inbox and keeps the handling choice on this device. A signed-in account with no customers or chats gets an empty bell until real chats exist. Mark read sets `read_at`. This does not send email, SMS, push, or WhatsApp. The WhatsApp ask-me-first switch in Channels is unchanged.
+
+The fifth migration adds `coworker_messages`, the owner's private thread with MyCoWorker. It is not the customer inbox. Row level security keeps each row to the signed-in user. Roles are `owner` and `assistant`. Demo mode does not use this table. It keeps the thread on the device. A signed-in reply is stored here, then the assistant answers. If `GEMINI_API_KEY` is set, that answer comes from Gemini. If it is not set, or Gemini does not answer, a local reply still comes back from the shop notes and the inbox the owner can already see. Nothing in this chat is sent on WhatsApp.
 
 `lib/db/queries.ts` and `lib/db/profile.ts` read and write those tables with the anon key and the signed-in session. The service role key is not used. When the URL or anon key is missing, the inbox stays on the sample chats and the shop form keeps its edits on this device. When they are set and a query fails, the inbox stays empty and asks you to refresh, instead of showing the sample people inside a broken account. A signed-in account with no rows, and WhatsApp not connected, still shows the sample inbox. Connecting WhatsApp, or any saved chat, switches the inbox to that account's rows.
 
@@ -102,7 +105,7 @@ Import this repository. Framework preset: **Next.js**. Vercel deploys from `main
 In the Vercel project, open Settings → Environment Variables.
 Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` from the Supabase project (Project Settings → API).
 For WhatsApp, also add `META_APP_ID`, `META_APP_SECRET`, `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, and `WEBHOOK_VERIFY_TOKEN`. `META_EMBEDDED_SIGNUP_CONFIG_ID` is optional.
-Redeploy after saving them. Leave the Supabase pair unset and the site stays in demo mode. Leave the Meta values unset and WhatsApp stays disconnected.
+Redeploy after saving them. Leave the Supabase pair unset and the site stays in demo mode. Leave the Meta values unset and WhatsApp stays disconnected. `GEMINI_API_KEY` is optional. Without it, Talk to MyCoWorker still replies on device.
 
 After deploy, the site can be installed to a phone home screen from the browser menu.
 
@@ -111,4 +114,4 @@ After deploy, the site can be installed to a phone home screen from the browser 
 - Accent: `#6C4CE0`
 - `public/logo_final.png` is the lockup (smiling chat bubble, wordmark, and “Your friendly assistant for small business”)
 - Favicon and PWA icons use that same bubble mark
-- The assistant portrait is one of four corporate PA options in `public/avatars/pa/`. The default is glasses, a charcoal suit, and a purple tie. Change it like a profile picture: in Settings, or while creating an account, tap the picture and then pick one. The chat screen does not ask again. The choice is stored on the device, and on the Supabase user when you are signed in. The portrait’s dot eyes blink and glance, and stay still when reduced motion is on.
+- The assistant portrait is one of four corporate PA options in `public/avatars/pa/`. The default is glasses, a charcoal suit, and a purple tie. Change it like a profile picture: in Settings, or while creating an account, tap the picture and then pick one. The chat screen does not ask again. The choice is stored on the device, and on the Supabase user when you are signed in. The dot eyes blink. The head looks with them, up, down, and around, then rests. While you type in Talk to MyCoWorker, the portrait leans in and watches the message. When you pause, it reacts once and settles. Reduced motion keeps the portrait still.

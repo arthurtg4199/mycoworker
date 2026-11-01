@@ -309,6 +309,14 @@ type AssistantSettingsRow = {
   updated_at: string;
 };
 
+type CoworkerMessageRow = {
+  id: string;
+  user_id: string;
+  role: "owner" | "assistant";
+  content: string;
+  created_at: string;
+};
+
 type NudgeRow = {
   id: string;
   user_id: string;
@@ -558,6 +566,23 @@ export type Database = {
           handling_mode?: HandlingMode;
           created_at?: string;
           updated_at?: string;
+        }
+      >;
+      coworker_messages: Table<
+        CoworkerMessageRow,
+        {
+          id?: string;
+          user_id?: string;
+          role: "owner" | "assistant";
+          content: string;
+          created_at?: string;
+        },
+        {
+          id?: string;
+          user_id?: string;
+          role?: "owner" | "assistant";
+          content?: string;
+          created_at?: string;
         }
       >;
       nudges: Table<
