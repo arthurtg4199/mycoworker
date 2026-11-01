@@ -1,14 +1,21 @@
 "use client";
 
 import { useState } from "react";
+import { DailyCheckInCard } from "@/components/daily-check-in";
 import { PaAvatar } from "@/components/pa-avatar";
+import type { HandlingMode } from "@/lib/assistant-mode";
+import type { DailyCheckIn } from "@/lib/nudges";
 
 export function AssistantScreen({
   prompts,
   intro,
+  checkIn,
+  handlingMode,
 }: {
   prompts: { id: string; label: string; reply: string }[];
   intro: string;
+  checkIn: DailyCheckIn;
+  handlingMode: HandlingMode;
 }) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const active = prompts.find((prompt) => prompt.id === activeId);
@@ -23,6 +30,11 @@ export function AssistantScreen({
         I handle the chats. You close the deals.
       </p>
       <p className="mt-3 text-center text-sm leading-5 text-muted">{intro}</p>
+      <DailyCheckInCard
+        checkIn={checkIn}
+        mode={handlingMode}
+        className="mt-5"
+      />
       <div className="mt-6 flex flex-col gap-2">
         {prompts.map((prompt) => {
           const selected = prompt.id === activeId;

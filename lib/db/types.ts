@@ -1,5 +1,7 @@
+import type { HandlingMode } from "@/lib/assistant-mode";
 import type { ReplyTone } from "@/lib/business-profile";
 import type { Channel } from "@/lib/demo-data";
+import type { NudgeType } from "@/lib/nudges";
 
 export type { Channel };
 
@@ -147,6 +149,26 @@ export type BusinessProfile = {
   updated_at: string;
 };
 
+export type AssistantSettings = {
+  user_id: string;
+  handling_mode: HandlingMode;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Nudge = {
+  id: string;
+  user_id: string;
+  type: NudgeType;
+  title: string;
+  body: string;
+  customer_id: string | null;
+  chat_id: string | null;
+  dedupe_key: string;
+  read_at: string | null;
+  created_at: string;
+};
+
 export type BusinessProfileInput = {
   business_name: string;
   what_they_sell?: string | null;
@@ -278,6 +300,26 @@ type WhatsAppConnectionRow = {
   status: WhatsAppConnectionStatus;
   created_at: string;
   updated_at: string;
+};
+
+type AssistantSettingsRow = {
+  user_id: string;
+  handling_mode: HandlingMode;
+  created_at: string;
+  updated_at: string;
+};
+
+type NudgeRow = {
+  id: string;
+  user_id: string;
+  type: NudgeType;
+  title: string;
+  body: string;
+  customer_id: string | null;
+  chat_id: string | null;
+  dedupe_key: string;
+  read_at: string | null;
+  created_at: string;
 };
 
 type WhatsAppReceiptRow = {
@@ -500,6 +542,48 @@ export type Database = {
           wa_message_id?: string;
           user_id?: string;
           message_id?: string | null;
+          created_at?: string;
+        }
+      >;
+      assistant_settings: Table<
+        AssistantSettingsRow,
+        {
+          user_id?: string;
+          handling_mode?: HandlingMode;
+          created_at?: string;
+          updated_at?: string;
+        },
+        {
+          user_id?: string;
+          handling_mode?: HandlingMode;
+          created_at?: string;
+          updated_at?: string;
+        }
+      >;
+      nudges: Table<
+        NudgeRow,
+        {
+          id?: string;
+          user_id?: string;
+          type: NudgeType;
+          title: string;
+          body: string;
+          customer_id?: string | null;
+          chat_id?: string | null;
+          dedupe_key: string;
+          read_at?: string | null;
+          created_at?: string;
+        },
+        {
+          id?: string;
+          user_id?: string;
+          type?: NudgeType;
+          title?: string;
+          body?: string;
+          customer_id?: string | null;
+          chat_id?: string | null;
+          dedupe_key?: string;
+          read_at?: string | null;
           created_at?: string;
         }
       >;

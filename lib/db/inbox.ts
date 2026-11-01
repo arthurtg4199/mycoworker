@@ -10,6 +10,7 @@ import {
   type Chat,
   type ChatStatus,
 } from "@/lib/demo-data";
+import { demoSignals, type ChatSignal } from "@/lib/nudges";
 import type {
   ChatPreview,
   ConversationStatus,
@@ -27,6 +28,7 @@ export type WorkspaceView = {
   channelTotals: { channel: Channel; label: string; count: number }[];
   whatsappConnected: boolean;
   whatsappAutoReply: boolean;
+  signals: ChatSignal[];
 };
 
 const avatarTints = [
@@ -47,6 +49,7 @@ export function demoWorkspace(): WorkspaceView {
     channelTotals,
     whatsappConnected: false,
     whatsappAutoReply: false,
+    signals: demoSignals(),
   };
 }
 
@@ -56,6 +59,7 @@ export function sampleWorkspace(): WorkspaceView {
     ...demoWorkspace(),
     notice:
       "Sample chats. Connect WhatsApp in Settings when you want your real number here.",
+    signals: [],
   };
 }
 
@@ -77,6 +81,7 @@ export function unavailableWorkspace(): WorkspaceView {
     channelTotals: emptyChannelTotals(),
     whatsappConnected: false,
     whatsappAutoReply: false,
+    signals: [],
   };
 }
 
@@ -236,7 +241,33 @@ export function workspaceFromRecords(
     })),
     whatsappConnected: whatsapp.connected,
     whatsappAutoReply: whatsapp.autoReply,
+    signals: chatSignals(threads, customers),
   };
+}
+
+function chatSignals(threads: InboxThread[], customers: Customer[]): ChatSignal[] {
+  const signals: ChatSignal[] = threads.map((thread) => ({
+    chatId: thread.preview.id,
+    customerId: thread.preview.customer_id,
+    name: thread.chat.name,
+    preview: thread.chat.preview,
+    status: thread.preview.status,
+    readyToClose: thread.preview.ready_to_close,
+  }));
+  const seen = new Set(signals.map((signal) => signal.customerId));
+  for (const customer of customers) {
+    if (!customer.ready_to_close || seen.has(customer.id)) continue;
+    seen.add(customer.id);
+    signals.push({
+      chatId: null,
+      customerId: customer.id,
+      name: customer.name.trim() || "Customer",
+      preview: "Ready for you.",
+      status: "hot",
+      readyToClose: true,
+    });
+  }
+  return signals;
 }
 
 export function liveHighlights(workspace: WorkspaceView) {

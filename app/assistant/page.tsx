@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AssistantScreen } from "@/components/assistant-screen";
 import { assistantIntro } from "@/lib/business-profile";
+import { loadAssistantHome } from "@/lib/db/assistant";
 import { liveAssistantPrompts } from "@/lib/db/inbox";
 import { loadBusinessProfile, shopFacts } from "@/lib/db/profile";
 import { loadWorkspace } from "@/lib/db/queries";
@@ -11,9 +12,10 @@ export const metadata: Metadata = {
 };
 
 export default async function AssistantPage() {
-  const [workspace, profile] = await Promise.all([
+  const [workspace, profile, assistant] = await Promise.all([
     loadWorkspace(),
     loadBusinessProfile(),
+    loadAssistantHome(),
   ]);
   const live = workspace.source === "live";
   const shop = shopFacts(profile);
@@ -26,6 +28,8 @@ export default async function AssistantPage() {
     <AssistantScreen
       prompts={live ? liveAssistantPrompts(workspace, shop) : assistantPrompts}
       intro={intro}
+      checkIn={assistant.checkIn}
+      handlingMode={assistant.mode}
     />
   );
 }

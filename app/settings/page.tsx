@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { AccountSettings } from "@/components/account-settings";
 import { BusinessProfileForm } from "@/components/business-profile-form";
+import { HandlingModeControl } from "@/components/handling-mode-control";
 import { ChannelIcon } from "@/components/icons";
 import { ChooseAssistant } from "@/components/pa-preference";
 import { WhatsAppConnect } from "@/components/whatsapp-connect";
 import { demoProfileFields, fieldsFromProfile } from "@/lib/business-profile";
+import { loadAssistantHome } from "@/lib/db/assistant";
 import { loadBusinessProfile } from "@/lib/db/profile";
 import { channelFilters } from "@/lib/demo-data";
 import { siteOrigin } from "@/lib/http/origin";
@@ -46,11 +48,12 @@ export default async function SettingsPage({
   searchParams,
 }: PageProps<"/settings">) {
   const query = await searchParams;
-  const [connection, config, origin, shop] = await Promise.all([
+  const [connection, config, origin, shop, assistant] = await Promise.all([
     getWhatsAppConnection(),
     readWhatsAppConfig(),
     siteOrigin(),
     loadBusinessProfile(),
+    loadAssistantHome(),
   ]);
   if (connection && config.webhookReady) {
     await syncIngestHash();
@@ -79,6 +82,8 @@ export default async function SettingsPage({
       </div>
 
       <ChooseAssistant />
+
+      <HandlingModeControl mode={assistant.mode} />
 
       <AccountSettings />
 

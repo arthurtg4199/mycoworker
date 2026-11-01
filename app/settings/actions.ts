@@ -2,11 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 import {
+  isHandlingMode,
+  type HandlingMode,
+} from "@/lib/assistant-mode";
+import {
   fieldsFromProfile,
   type BusinessProfileFields,
   type ProfileFormState,
 } from "@/lib/business-profile";
 import { getAuthUser } from "@/lib/auth";
+import { upsertHandlingMode } from "@/lib/db/assistant";
 import {
   DatabaseNotConfiguredError,
   DatabaseQueryError,
@@ -14,6 +19,67 @@ import {
 import { upsertBusinessProfile } from "@/lib/db/profile";
 import { profileUpsert } from "@/lib/db/validate";
 import { getSupabaseEnv } from "@/lib/supabase/env";
+
+export type HandlingModeState = {
+  ok?: boolean;
+  demo?: boolean;
+  mode?: HandlingMode;
+  message?: string;
+};
+
+export async function saveHandlingMode(
+  _previous: HandlingModeState,
+  formData: FormData,
+): Promise<HandlingModeState> {
+  const mode = formData.get("mode");
+  if (!isHandlingMode(mode)) {
+    return {
+      ok: false,
+      message: "Pick Ask me first, Auto-reply, or Paused.",
+    };
+  }
+
+  if (!getSupabaseEnv()) {
+    return {
+      ok: true,
+      demo: true,
+      mode,
+      message: "Saved on this device.",
+    };
+  }
+
+  const user = await getAuthUser();
+  if (!user) {
+    return { ok: false, message: "Sign in to save how I handle chats." };
+  }
+
+  try {
+    await upsertHandlingMode(user.id, mode);
+    revalidatePath("/", "layout");
+    return {
+      ok: true,
+      mode,
+      message: "Saved. I'll handle chats this way.",
+    };
+  } catch (error) {
+    if (error instanceof DatabaseNotConfiguredError) {
+      return {
+        ok: true,
+        demo: true,
+        mode,
+        message: "Saved on this device.",
+      };
+    }
+    console.error(
+      "MyCoWorker could not save the handling mode.",
+      error instanceof DatabaseQueryError ? error.message : error,
+    );
+    return {
+      ok: false,
+      message: "I could not save that just now. Try again.",
+    };
+  }
+}
 
 function textField(formData: FormData, name: string) {
   const value = formData.get(name);

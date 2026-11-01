@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import { Avatar } from "@/components/avatar";
+import { DailyCheckInCard } from "@/components/daily-check-in";
 import {
   ArrowIcon,
   ChannelIcon,
@@ -18,7 +19,9 @@ import {
   type Chat,
 } from "@/lib/demo-data";
 import type { Message } from "@/lib/db/types";
+import type { HandlingMode } from "@/lib/assistant-mode";
 import type { WorkspaceSource } from "@/lib/db/inbox";
+import type { DailyCheckIn } from "@/lib/nudges";
 import {
   loadThreadMessages,
   sendWhatsAppReply,
@@ -41,6 +44,8 @@ export function InboxScreen({
   whatsappConnected,
   whatsappAutoReply,
   businessName = null,
+  checkIn,
+  handlingMode,
 }: {
   chats: Chat[];
   summary: { chatsHandled: number; buyersReady: number };
@@ -49,6 +54,8 @@ export function InboxScreen({
   whatsappConnected: boolean;
   whatsappAutoReply: boolean;
   businessName?: string | null;
+  checkIn: DailyCheckIn;
+  handlingMode: HandlingMode;
 }) {
   const [channel, setChannel] = useState<Channel | "all">("all");
   const [status, setStatus] = useState<StatusFilter>("all");
@@ -151,6 +158,8 @@ export function InboxScreen({
           <ArrowIcon className="h-4 w-4" />
         </span>
       </Link>
+
+      <DailyCheckInCard checkIn={checkIn} mode={handlingMode} />
 
       <div className="relative mt-5 flex items-center justify-between px-4" ref={filterRef}>
         <h2 className="text-[1.35rem] font-extrabold tracking-[-0.03em] text-ink">

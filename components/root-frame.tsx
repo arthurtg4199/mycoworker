@@ -3,7 +3,7 @@ import { AuthScreen } from "@/components/auth-screen";
 import { PaAvatarProvider } from "@/components/pa-preference";
 import { SessionProvider } from "@/components/session";
 import { getAuthUser } from "@/lib/auth";
-import { liveHighlights } from "@/lib/db/inbox";
+import { loadAssistantHome } from "@/lib/db/assistant";
 import { loadBusinessProfile, shopFacts } from "@/lib/db/profile";
 import { loadWorkspace } from "@/lib/db/queries";
 import { supabaseConfigStatus } from "@/lib/supabase/env";
@@ -12,13 +12,7 @@ export function RootFrame({ children }: { children: React.ReactNode }) {
   const status = supabaseConfigStatus();
 
   if (status === "demo") {
-    return (
-      <SessionProvider value={{ demoMode: true, email: null }}>
-        <PaAvatarProvider>
-          <AppChrome>{children}</AppChrome>
-        </PaAvatarProvider>
-      </SessionProvider>
-    );
+    return <DemoFrame>{children}</DemoFrame>;
   }
 
   if (status === "incomplete") {
@@ -28,6 +22,23 @@ export function RootFrame({ children }: { children: React.ReactNode }) {
   return <AuthedFrame>{children}</AuthedFrame>;
 }
 
+async function DemoFrame({ children }: { children: React.ReactNode }) {
+  const assistant = await loadAssistantHome();
+  return (
+    <SessionProvider value={{ demoMode: true, email: null }}>
+      <PaAvatarProvider>
+        <AppChrome
+          handlingMode={assistant.mode}
+          nudges={assistant.nudges}
+          nudgeEmpty={assistant.notice ?? assistant.emptyCopy}
+        >
+          {children}
+        </AppChrome>
+      </PaAvatarProvider>
+    </SessionProvider>
+  );
+}
+
 async function AuthedFrame({ children }: { children: React.ReactNode }) {
   const user = await getAuthUser();
 
@@ -35,9 +46,10 @@ async function AuthedFrame({ children }: { children: React.ReactNode }) {
     return <AuthScreen />;
   }
 
-  const [workspace, profile] = await Promise.all([
+  const [workspace, profile, assistant] = await Promise.all([
     loadWorkspace(),
     loadBusinessProfile(),
+    loadAssistantHome(),
   ]);
   const sampleChats = workspace.source === "demo";
   const shop = shopFacts(profile);
@@ -48,7 +60,9 @@ async function AuthedFrame({ children }: { children: React.ReactNode }) {
         <AppChrome
           sampleChats={sampleChats}
           whatsappConnected={workspace.whatsappConnected}
-          highlights={sampleChats ? null : liveHighlights(workspace)}
+          handlingMode={assistant.mode}
+          nudges={assistant.nudges}
+          nudgeEmpty={assistant.notice ?? assistant.emptyCopy}
           shop={
             shop
               ? { name: shop.business_name, location: shop.location }
