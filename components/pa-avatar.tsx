@@ -108,12 +108,13 @@ export function PaPortrait({
     return subscribePaPose(
       () => presenceRef.current,
       (pose) => {
-        node.style.setProperty("--pa-hx", `${pose.hx.toFixed(2)}px`);
-        node.style.setProperty("--pa-hy", `${pose.hy.toFixed(2)}px`);
-        node.style.setProperty("--pa-rot", `${pose.rot.toFixed(2)}deg`);
+        node.style.setProperty("--pa-shift-x", `${pose.shiftX.toFixed(2)}px`);
+        node.style.setProperty("--pa-shift-y", `${pose.shiftY.toFixed(2)}px`);
+        node.style.setProperty("--pa-yaw", `${pose.yaw.toFixed(2)}deg`);
+        node.style.setProperty("--pa-pitch", `${pose.pitch.toFixed(2)}deg`);
         node.style.setProperty("--pa-scale", pose.scale.toFixed(3));
-        node.style.setProperty("--pa-px", `${pose.px.toFixed(2)}%`);
-        node.style.setProperty("--pa-py", `${pose.py.toFixed(2)}%`);
+        node.style.setProperty("--pa-px", `${pose.px.toFixed(2)}px`);
+        node.style.setProperty("--pa-py", `${pose.py.toFixed(2)}px`);
       },
     );
   }, [lively, animate]);

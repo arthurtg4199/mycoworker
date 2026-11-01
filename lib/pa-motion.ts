@@ -3,9 +3,13 @@
 export type PaPresence = "rest" | "focus" | "notice";
 
 export type PaPose = {
-  hx: number;
-  hy: number;
-  rot: number;
+  /** Face shift in px. Sideways is the turn. Up/down is a small held gaze, not a bob. */
+  shiftX: number;
+  shiftY: number;
+  /** Head turn left/right, degrees. */
+  yaw: number;
+  /** Head turn up/down, degrees. */
+  pitch: number;
   scale: number;
   px: number;
   py: number;
@@ -19,6 +23,9 @@ type Slot = {
   head: Gaze;
   lean: number;
   pose: PaPose;
+  glance: Gaze;
+  glanceUntil: number;
+  glanceIndex: number;
 };
 
 type Listener = {
@@ -27,29 +34,43 @@ type Listener = {
   notify: (pose: PaPose) => void;
 };
 
-const restPath: { x: number; y: number; hold: number }[] = [
-  { x: 0.02, y: 0.16, hold: 2.35 },
-  { x: -0.8, y: 0.05, hold: 1.05 },
-  { x: -0.22, y: -0.7, hold: 0.9 },
-  { x: 0.04, y: 0.02, hold: 1.85 },
-  { x: 0.84, y: 0.18, hold: 1.1 },
-  { x: 0.28, y: 0.78, hold: 1.05 },
-  { x: -0.48, y: -0.28, hold: 0.85 },
-  { x: 0.1, y: -0.58, hold: 0.8 },
-  { x: 0, y: 0.14, hold: 2.6 },
+/** Look directions. x is left (−) / right (+). y is up (−) / down (+). */
+const looks: Gaze[] = [
+  { x: -1, y: 0.05 },
+  { x: 1, y: -0.06 },
+  { x: 0.04, y: -1 },
+  { x: -0.05, y: 1 },
+  { x: -0.74, y: -0.62 },
+  { x: 0.8, y: 0.5 },
+  { x: 0.66, y: -0.58 },
+  { x: -0.7, y: 0.46 },
+  { x: 0, y: 0 },
+  { x: -0.42, y: 0.1 },
+  { x: 0.38, y: -0.12 },
+  { x: 0.12, y: 0.72 },
+  { x: -0.16, y: -0.78 },
 ];
 
-const TRAVEL = 0.62;
-
-const neutralPose: PaPose = { hx: 0, hy: 0, rot: 0, scale: 1, px: 0, py: 0 };
+const neutralPose: PaPose = {
+  shiftX: 0,
+  shiftY: 0,
+  yaw: 0,
+  pitch: 0,
+  scale: 1,
+  px: 0,
+  py: 0,
+};
 
 function makeSlot(now: number): Slot {
   return {
     since: now,
-    pupil: { x: 0.02, y: 0.14 },
-    head: { x: 0.01, y: 0.1 },
+    pupil: { x: 0, y: 0 },
+    head: { x: 0, y: 0 },
     lean: 0,
     pose: neutralPose,
+    glance: { x: 0, y: 0 },
+    glanceUntil: now,
+    glanceIndex: -1,
   };
 }
 
@@ -64,62 +85,61 @@ let raf = 0;
 let last = 0;
 let reduced = false;
 
-function smoothstep(t: number) {
-  const x = Math.min(1, Math.max(0, t));
-  return x * x * (3 - 2 * x);
-}
-
 function damp(current: number, target: number, lambda: number, dt: number) {
   return current + (target - current) * (1 - Math.exp(-lambda * dt));
 }
 
-function restGaze(now: number): Gaze {
-  const holds = restPath.reduce((sum, point) => sum + point.hold, 0);
-  const cycle = holds + TRAVEL * restPath.length;
-  let t = (now / 1000) % cycle;
-  for (let index = 0; index < restPath.length; index += 1) {
-    const point = restPath[index]!;
-    const next = restPath[(index + 1) % restPath.length]!;
-    if (t < point.hold) {
-      return {
-        x: point.x + Math.sin(now / 1400 + index) * 0.04,
-        y: point.y + Math.cos(now / 1700 + index * 0.6) * 0.035,
-      };
-    }
-    t -= point.hold;
-    if (t < TRAVEL) {
-      const k = smoothstep(t / TRAVEL);
-      return {
-        x: point.x + (next.x - point.x) * k,
-        y: point.y + (next.y - point.y) * k,
-      };
-    }
-    t -= TRAVEL;
-  }
-  return { x: 0, y: 0.12 };
+function lookAxis(look: Gaze) {
+  return Math.abs(look.x) >= Math.abs(look.y) ? "x" : "y";
 }
 
-function gazeFor(presence: PaPresence, now: number, since: number): Gaze {
+function pickGlance(slot: Slot, now: number) {
+  const previousAxis = lookAxis(slot.glance);
+  const pool = looks
+    .map((look, index) => ({ look, index }))
+    .filter(
+      (item) =>
+        item.index !== slot.glanceIndex && lookAxis(item.look) !== previousAxis,
+    );
+  const choice =
+    pool[Math.floor(Math.random() * pool.length)] ??
+    looks
+      .map((look, index) => ({ look, index }))
+      .find((item) => item.index !== slot.glanceIndex) ?? { look: looks[0]!, index: 0 };
+  const index = choice.index;
+  const look = choice.look;
+  const magnitude = 0.78 + Math.random() * 0.22;
+  const nearCenter = Math.abs(look.x) < 0.2 && Math.abs(look.y) < 0.2;
+  const hold = nearCenter
+    ? 1700 + Math.random() * 1200
+    : 1400 + Math.random() * 900;
+  slot.glanceIndex = index;
+  slot.glance = { x: look.x * magnitude, y: look.y * magnitude };
+  slot.glanceUntil = now + hold;
+}
+
+function gazeFor(slot: Slot, presence: PaPresence, now: number): Gaze {
   if (presence === "focus") {
-    const elapsed = (now - since) / 1000;
+    const elapsed = (now - slot.since) / 1000;
     return {
-      x: Math.sin(elapsed * 1.45) * 0.16 + Math.sin(elapsed * 0.45) * 0.05,
-      y: 0.84 + Math.sin(elapsed * 2.1) * 0.05,
+      x: Math.sin(elapsed * 0.7) * 0.1,
+      y: 0.42,
     };
   }
   if (presence === "notice") {
-    const elapsed = (now - since) / 1000;
-    if (elapsed < 0.26) return { x: -0.18, y: -0.92 };
-    if (elapsed < 0.62) return { x: 0.12, y: -0.08 };
-    return { x: 0.02, y: 0.16 };
+    const elapsed = (now - slot.since) / 1000;
+    if (elapsed < 0.32) return { x: 0.42, y: -0.7 };
+    if (elapsed < 0.7) return { x: -0.2, y: 0.08 };
+    return { x: 0, y: 0 };
   }
-  return restGaze(now);
+  if (now >= slot.glanceUntil) pickGlance(slot, now);
+  return slot.glance;
 }
 
 function rates(presence: PaPresence) {
-  if (presence === "notice") return { pupil: 16, head: 8, lean: 7 };
-  if (presence === "focus") return { pupil: 9, head: 4.2, lean: 6 };
-  return { pupil: 4.6, head: 2.4, lean: 4 };
+  if (presence === "notice") return { pupil: 14, head: 7, lean: 8 };
+  if (presence === "focus") return { pupil: 8, head: 4, lean: 5 };
+  return { pupil: 6.5, head: 4.4, lean: 5 };
 }
 
 function seed(to: Slot, from: Slot, now: number) {
@@ -130,7 +150,7 @@ function seed(to: Slot, from: Slot, now: number) {
 }
 
 function step(slot: Slot, presence: PaPresence, now: number, dt: number) {
-  const target = gazeFor(presence, now, slot.since);
+  const target = gazeFor(slot, presence, now);
   const rate = rates(presence);
   slot.pupil = {
     x: damp(slot.pupil.x, target.x, rate.pupil, dt),
@@ -143,27 +163,14 @@ function step(slot: Slot, presence: PaPresence, now: number, dt: number) {
   const leanTarget = presence === "focus" ? 1 : 0;
   slot.lean = damp(slot.lean, leanTarget, rate.lean, dt);
 
-  const elapsed = (now - slot.since) / 1000;
-  let nod = 0;
-  let react = 0;
-  if (presence === "notice" && elapsed > 0.16 && elapsed < 0.7) {
-    const k = (elapsed - 0.16) / 0.54;
-    nod = Math.sin(Math.min(1, k) * Math.PI) * 9;
-    react = Math.sin(Math.min(1, k) * Math.PI);
-  }
-
-  const breath =
-    presence === "focus"
-      ? Math.sin(now / 560) * 0.4
-      : Math.sin(now / 980) * 2.1;
-
   slot.pose = {
-    hx: slot.head.x * 12,
-    hy: slot.head.y * 10 + breath + nod + slot.lean * 8,
-    rot: slot.head.x * 16 - slot.head.y * 6,
-    scale: 1 + slot.lean * 0.16 + react * 0.07,
-    px: slot.pupil.x * 58,
-    py: slot.pupil.y * 48,
+    shiftX: slot.head.x * 9,
+    shiftY: 0,
+    yaw: slot.head.x * -16,
+    pitch: slot.head.y * 14,
+    scale: 1 + slot.lean * 0.06,
+    px: slot.pupil.x * 2.8,
+    py: slot.pupil.y * 2.8,
   };
 }
 
