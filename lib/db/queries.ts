@@ -5,6 +5,7 @@ import {
   sampleWorkspace,
   unavailableWorkspace,
   workspaceFromRecords,
+  type InboundLine,
   type WorkspaceView,
 } from "@/lib/db/inbox";
 import { getWhatsAppConnection } from "@/lib/whatsapp/store";
@@ -365,6 +366,22 @@ export async function updatePayment(
   return paymentFromRow(requiredRow(data, error));
 }
 
+async function listRecentInboundOn(db: Db): Promise<InboundLine[]> {
+  const { data, error } = await db
+    .from("messages")
+    .select("chat_id, role, content, created_at")
+    .eq("role", "user")
+    .order("created_at", { ascending: false })
+    .limit(300);
+  if (error) throwQuery(error);
+  return (data ?? []).map((row) => ({
+    chatId: row.chat_id,
+    content: row.content,
+    role: row.role,
+    at: row.created_at,
+  }));
+}
+
 async function listChatPreviewsOn(db: Db): Promise<ChatPreview[]> {
   const { data, error } = await db
     .from("chat_previews")
@@ -385,18 +402,31 @@ export const loadWorkspace = cache(async (): Promise<WorkspaceView> => {
 
   try {
     const db = await database();
-    const [customers, previews, connection] = await Promise.all([
+    const [customers, previews, connection, inbound] = await Promise.all([
       listCustomersOn(db),
       listChatPreviewsOn(db),
       getWhatsAppConnection(),
+      listRecentInboundOn(db).catch((error: unknown) => {
+        console.error(
+          "MyCoWorker could not score recent messages.",
+          error instanceof Error ? error.message : error,
+        );
+        return [] as InboundLine[];
+      }),
     ]);
     if (!connection && customers.length === 0 && previews.length === 0) {
       return sampleWorkspace();
     }
-    return workspaceFromRecords(customers, previews, new Date(), {
-      connected: Boolean(connection),
-      autoReply: connection?.autoReply ?? false,
-    });
+    return workspaceFromRecords(
+      customers,
+      previews,
+      new Date(),
+      {
+        connected: Boolean(connection),
+        autoReply: connection?.autoReply ?? false,
+      },
+      inbound,
+    );
   } catch (error) {
     if (error instanceof DatabaseNotConfiguredError) return demoWorkspace();
     console.error(

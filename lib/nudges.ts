@@ -1,7 +1,7 @@
 import type { HandlingMode } from "@/lib/assistant-mode";
 import { handlingModeCopy } from "@/lib/assistant-mode";
 import type { ConversationStatus } from "@/lib/db/types";
-import { chats, type ChatStatus } from "@/lib/demo-data";
+import { demoChats, type ChatStatus } from "@/lib/demo-data";
 
 export const nudgeTypes = [
   "hot_buyer",
@@ -19,6 +19,7 @@ export type ChatSignal = {
   preview: string;
   status: ConversationStatus;
   readyToClose: boolean;
+  hotBuyer: boolean;
 };
 
 export type NudgeDraft = {
@@ -55,8 +56,6 @@ const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const perTypeCap = 8;
-
-const demoReady = new Set(["james", "mark"]);
 
 export const sampleNudgeEmpty =
   "Nudges appear when chats are connected. Nothing is waiting on you yet.";
@@ -113,20 +112,21 @@ function demoStatus(status: ChatStatus | undefined): ConversationStatus {
   return "open";
 }
 
-/** Sample inbox signals. James and Mark are ready, Ryan is waiting, Priya needs a follow-up. */
+/** Sample inbox signals. Hot buyers come from the message scorer. Ryan is waiting, Priya needs a follow-up. */
 export function demoSignals(): ChatSignal[] {
-  return chats.map((chat) => ({
+  return demoChats().map((chat) => ({
     chatId: chat.id,
     customerId: chat.id,
     name: chat.name,
     preview: chat.preview,
     status: demoStatus(chat.status),
-    readyToClose: demoReady.has(chat.id),
+    readyToClose: Boolean(chat.hot),
+    hotBuyer: Boolean(chat.hot),
   }));
 }
 
 export function classifySignal(signal: ChatSignal): Exclude<NudgeType, "daily_check_in"> | null {
-  if (signal.status === "hot" || signal.readyToClose) return "hot_buyer";
+  if (signal.hotBuyer || signal.status === "hot" || signal.readyToClose) return "hot_buyer";
   if (signal.status === "your_turn") return "unanswered";
   if (signal.status === "followed_up") return "follow_up";
   return null;
