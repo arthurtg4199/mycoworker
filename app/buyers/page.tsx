@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Avatar } from "@/components/avatar";
 import { PaAvatar } from "@/components/pa-avatar";
-import { StatusPill } from "@/components/status-pill";
+import { HotBadge, StatusPill } from "@/components/status-pill";
 import { loadBusinessProfile, shopFacts } from "@/lib/db/profile";
 import { loadWorkspace } from "@/lib/db/queries";
 import { channelLabel } from "@/lib/demo-data";
@@ -61,7 +61,7 @@ export default async function BuyersPage() {
                       {channel ? channelLabel(channel) : "Chat"}
                     </p>
                   </div>
-                  <StatusPill status={buyer.status} />
+                  {buyer.hot ? <HotBadge /> : <StatusPill status={buyer.status} />}
                 </div>
                 <p className="mt-3 text-sm leading-5 text-[#3C3A46]">
                   {buyer.preview}

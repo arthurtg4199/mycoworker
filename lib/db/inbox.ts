@@ -1,15 +1,16 @@
 import { draftCustomerReply, isReplyTone } from "@/lib/business-profile";
 import {
-  buyers,
   channelFilters,
   channelLabel,
-  chats,
   dailySummary,
+  demoBuyers,
+  demoChats,
   channelTotals,
   type Channel,
   type Chat,
   type ChatStatus,
 } from "@/lib/demo-data";
+import { scoreBuyingIntent, type HotBuyerMessage } from "@/lib/hot-buyer";
 import { demoSignals, type ChatSignal } from "@/lib/nudges";
 import type {
   ChatPreview,
@@ -40,10 +41,12 @@ const avatarTints = [
 ] as const;
 
 export function demoWorkspace(): WorkspaceView {
+  const chats = demoChats();
+  const buyers = demoBuyers();
   return {
     source: "demo",
     notice: null,
-    summary: dailySummary,
+    summary: { ...dailySummary, buyersReady: buyers.length },
     chats,
     buyers,
     channelTotals,
@@ -144,15 +147,37 @@ type InboxThread = {
   chat: Chat;
 };
 
-function toInboxChat(preview: ChatPreview, now: Date): Chat {
+export type InboundLine = {
+  chatId: string;
+  content: string;
+  role: string;
+  at: string;
+};
+
+function toHotMessages(lines: InboundLine[]): HotBuyerMessage[] {
+  return lines.map((line) => ({
+    content: line.content,
+    role: line.role,
+    at: line.at,
+  }));
+}
+
+function toInboxChat(preview: ChatPreview, now: Date, inbound: InboundLine[]): Chat {
+  const detected = scoreBuyingIntent(toHotMessages(inbound), now).hot;
+  const handled =
+    preview.status === "answered" ||
+    preview.status === "followed_up" ||
+    preview.status === "closed";
+  const hot = preview.status === "hot" || (detected && !handled);
   return {
     id: preview.id,
     name: preview.customer_name.trim() || "Customer",
     preview: previewText(preview.last_message),
     time: formatChatTime(preview.last_message_at ?? preview.updated_at, now),
     channels: [preview.channel],
-    status: uiStatus(preview.status),
-    showTurnNote: preview.status === "your_turn",
+    status: hot ? "hot" : uiStatus(preview.status),
+    hot,
+    showTurnNote: preview.status === "your_turn" && !hot,
     avatar: avatarFor(preview.customer_name, preview.channel),
   };
 }
@@ -171,13 +196,20 @@ export function workspaceFromRecords(
     connected: false,
     autoReply: false,
   },
+  inbound: InboundLine[] = [],
 ): WorkspaceView {
+  const inboundByChat = new Map<string, InboundLine[]>();
+  for (const line of inbound) {
+    const list = inboundByChat.get(line.chatId);
+    if (list) list.push(line);
+    else inboundByChat.set(line.chatId, [line]);
+  }
   const threads: InboxThread[] = previews
     .map((preview) => ({
       customerId: preview.customer_id,
       sort: recency(preview.last_message_at, preview.updated_at),
       preview,
-      chat: toInboxChat(preview, now),
+      chat: toInboxChat(preview, now, inboundByChat.get(preview.id) ?? []),
     }))
     .sort((a, b) => b.sort - a.sort);
 
@@ -185,7 +217,9 @@ export function workspaceFromRecords(
   const readyBuyers: Chat[] = [];
   for (const thread of threads) {
     const waiting =
-      thread.preview.status === "hot" || thread.preview.status === "your_turn";
+      thread.chat.hot ||
+      thread.preview.status === "hot" ||
+      thread.preview.status === "your_turn";
     const ready = thread.preview.ready_to_close;
     if (!waiting && !ready) continue;
     if (seenBuyers.has(thread.customerId)) continue;
@@ -251,8 +285,9 @@ function chatSignals(threads: InboxThread[], customers: Customer[]): ChatSignal[
     customerId: thread.preview.customer_id,
     name: thread.chat.name,
     preview: thread.chat.preview,
-    status: thread.preview.status,
+    status: thread.chat.hot ? "hot" : thread.preview.status,
     readyToClose: thread.preview.ready_to_close,
+    hotBuyer: Boolean(thread.chat.hot),
   }));
   const seen = new Set(signals.map((signal) => signal.customerId));
   for (const customer of customers) {
@@ -265,6 +300,7 @@ function chatSignals(threads: InboxThread[], customers: Customer[]): ChatSignal[
       preview: "Ready for you.",
       status: "hot",
       readyToClose: true,
+      hotBuyer: true,
     });
   }
   return signals;

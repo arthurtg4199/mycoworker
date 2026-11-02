@@ -1,6 +1,14 @@
 import { CheckIcon } from "@/components/icons";
 import type { ChatStatus } from "@/lib/demo-data";
 
+export function HotBadge() {
+  return (
+    <span className="inline-flex rounded-full bg-mcw px-2 py-1 text-[11px] leading-none font-semibold whitespace-nowrap text-white">
+      Hot
+    </span>
+  );
+}
+
 export function StatusPill({ status }: { status?: ChatStatus }) {
   if (!status) return null;
 
@@ -13,13 +21,7 @@ export function StatusPill({ status }: { status?: ChatStatus }) {
     );
   }
 
-  if (status === "hot") {
-    return (
-      <span className="inline-flex rounded-full bg-mcw px-2.5 py-1 text-[11px] leading-none font-semibold whitespace-nowrap text-white">
-        Hot buyer, your turn
-      </span>
-    );
-  }
+  if (status === "hot") return <HotBadge />;
 
   const label = status === "followed_up" ? "Followed up" : "Your turn";
 

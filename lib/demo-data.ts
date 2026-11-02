@@ -1,3 +1,5 @@
+import { scoreBuyingIntent } from "@/lib/hot-buyer";
+
 export type Channel = "whatsapp" | "instagram" | "email";
 
 export type ChatStatus = "answered" | "hot" | "followed_up" | "your_turn";
@@ -20,6 +22,7 @@ export type Chat = {
   channels: Channel[];
   status?: ChatStatus;
   showTurnNote?: boolean;
+  hot?: boolean;
   avatar: AvatarSpec;
 };
 
@@ -29,6 +32,20 @@ export const dailySummary = {
 };
 
 export const chats: Chat[] = [
+  {
+    id: "tunde",
+    name: "Tunde Adeyemi",
+    preview: "Abeg how much last? I go take 2. Send account.",
+    time: "9:42 AM",
+    channels: ["whatsapp"],
+    avatar: {
+      kind: "initial",
+      letter: "T",
+      tint: "#E4DCFF",
+      ink: "#6C4CE0",
+      badge: "whatsapp",
+    },
+  },
   {
     id: "sarah",
     name: "Sarah Mitchell",
@@ -96,13 +113,33 @@ export const chats: Chat[] = [
   },
 ];
 
-export const buyers = ["james", "ryan", "mark"].map((id) => {
-  const chat = chats.find((item) => item.id === id);
-  if (!chat) {
-    throw new Error(`Missing demo buyer ${id}`);
-  }
-  return chat;
-});
+/** Customer lines the hot-buyer scorer reads in demo mode. The preview is the latest one. */
+export const demoInbound: Record<string, string[]> = {
+  tunde: ["Abeg how much last?", "I go take 2. Send account."],
+  sarah: ["Thanks! That works perfectly."],
+  james: ["Hi, is the blue one still there?", "Do you have it in blue and size 10?"],
+  priya: ["Great, please send the details."],
+  mark: ["Is the offer still available?"],
+  aisha: ["Okay, thank you!"],
+  ryan: ["Can we schedule a call?"],
+};
+
+export function demoChats(): Chat[] {
+  return chats.map((chat) => {
+    const inbound = demoInbound[chat.id] ?? [chat.preview];
+    const hot = scoreBuyingIntent(inbound).hot || chat.status === "hot";
+    const handled = chat.status === "answered" || chat.status === "followed_up";
+    return {
+      ...chat,
+      hot,
+      status: hot && !handled ? "hot" : chat.status,
+    };
+  });
+}
+
+export function demoBuyers(): Chat[] {
+  return demoChats().filter((chat) => chat.hot);
+}
 
 export const channelTotals: { channel: Channel; label: string; count: number }[] =
   [
@@ -122,7 +159,7 @@ export const assistantPrompts = [
     id: "who",
     label: "Who should I talk to?",
     reply:
-      "Start with James Carter. They asked if you have it in blue, size 10, and they are ready to buy. Ryan Thompson wants to schedule a call. Mark Lewis is checking whether the offer is still available.",
+      "Start with Tunde Adeyemi. They asked how much last, said they will take 2, and want the account. James Carter wants it in blue, size 10. Mark Lewis is checking whether the offer is still available. Ryan Thompson wants to schedule a call.",
   },
   {
     id: "today",

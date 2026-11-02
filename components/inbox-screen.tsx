@@ -11,7 +11,7 @@ import {
   SlidersIcon,
 } from "@/components/icons";
 import { PaAvatar } from "@/components/pa-avatar";
-import { StatusPill } from "@/components/status-pill";
+import { HotBadge, StatusPill } from "@/components/status-pill";
 import {
   channelFilters,
   channelLabel,
@@ -27,10 +27,11 @@ import {
   sendWhatsAppReply,
 } from "@/app/whatsapp/actions";
 
-type StatusFilter = "all" | "needs_you" | "answered" | "followed_up";
+type StatusFilter = "all" | "needs_you" | "hot" | "answered" | "followed_up";
 
 const statusFilters: { id: StatusFilter; label: string }[] = [
   { id: "all", label: "All chats" },
+  { id: "hot", label: "Hot buyers" },
   { id: "needs_you", label: "Your turn" },
   { id: "answered", label: "Answered" },
   { id: "followed_up", label: "Followed up" },
@@ -97,8 +98,18 @@ export function InboxScreen({
     );
   }
 
-  const visible = chats.filter((chat) => {
-    if (channel !== "all" && !chat.channels.includes(channel)) return false;
+  function openChatById(id: string) {
+    setFilterOpen(false);
+    setOpenId(id);
+    document.getElementById("app-main")?.scrollTo({ top: 0 });
+  }
+
+  const inChannel = chats.filter(
+    (chat) => channel === "all" || chat.channels.includes(channel),
+  );
+  const hotBuyers = inChannel.filter((chat) => chat.hot);
+  const visible = inChannel.filter((chat) => {
+    if (status === "hot") return Boolean(chat.hot);
     if (status === "needs_you") {
       return chat.status === "hot" || chat.status === "your_turn";
     }
@@ -161,6 +172,44 @@ export function InboxScreen({
 
       <DailyCheckInCard checkIn={checkIn} mode={handlingMode} />
 
+      {hotBuyers.length > 0 && status === "all" ? (
+        <section aria-label="Hot buyers" className="mt-4 px-4">
+          <div className="flex items-baseline justify-between gap-3">
+            <h3 className="text-sm font-extrabold tracking-[-0.02em] text-ink">
+              Hot buyers
+            </h3>
+            <button
+              type="button"
+              className="text-[13px] font-semibold text-mcw"
+              onClick={() => setStatus("hot")}
+            >
+              {hotBuyers.length} ready
+            </button>
+          </div>
+          <ul className="mt-2 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
+            {hotBuyers.map((chat) => (
+              <li key={chat.id} className="shrink-0">
+                <button
+                  type="button"
+                  onClick={() => openChatById(chat.id)}
+                  className="flex w-[168px] items-center gap-2 rounded-2xl bg-mcw-soft px-2.5 py-2 text-left"
+                >
+                  <Avatar spec={chat.avatar} size="sm" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[13px] font-bold text-ink">
+                      {chat.name.split(" ")[0]}
+                    </span>
+                    <span className="mt-1 block">
+                      <HotBadge />
+                    </span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
       <div className="relative mt-5 flex items-center justify-between px-4" ref={filterRef}>
         <h2 className="text-[1.35rem] font-extrabold tracking-[-0.03em] text-ink">
           Inbox
@@ -219,11 +268,7 @@ export function InboxScreen({
             <li key={chat.id}>
               <button
                 type="button"
-                onClick={() => {
-                  setFilterOpen(false);
-                  setOpenId(chat.id);
-                  document.getElementById("app-main")?.scrollTo({ top: 0 });
-                }}
+                onClick={() => openChatById(chat.id)}
                 className="flex w-full gap-3 rounded-2xl px-2 py-3 text-left hover:bg-[#FAF8FF]"
               >
                 <Avatar spec={chat.avatar} />
