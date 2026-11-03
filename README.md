@@ -18,6 +18,7 @@ This is a mobile-first app shell. Without Supabase settings it runs in demo mode
 
 - **Sign in** — email and password, shown when the Supabase URL and anon key are set
 - **Inbox** — daily summary (“I handled 42 chats today. 3 buyers ready for you.”), a morning check-in (“Here's what needs you today”), channel chips, status tags, and demo threads
+- **Customers**: name, phone, channel, last message, and a stage (New, Interested, Paid, Follow up). Search by name or phone. Open someone to edit the stage and notes, and see recent messages and payments. Demo mode uses the sample inbox people and keeps edits on this device. A signed-in account reads the `customers` table.
 - **Buyers**, **Analytics**, **Settings** — buyers and analytics follow the inbox. Settings is where you name the shop, pick the assistant picture, choose how chats are handled, and sign out
 - **Talk to MyCoWorker** — a private chat with the assistant, separate from the customer inbox. The portrait you picked in Settings sits in the header and beside replies. You can type, or tap a starter. Demo mode keeps the thread on this device. A signed-in account saves it. The morning check-in still sits at the top of that screen.
 - **Nudges** — the bell lists hot buyers, follow-ups, unanswered customers, and the daily check-in. The header shows Ask me first, Auto-reply, or Paused.
@@ -42,6 +43,7 @@ Apply these in order in the Supabase SQL editor, or with the Supabase CLI (`supa
 3. `supabase/migrations/20261031220000_business_profiles.sql`
 4. `supabase/migrations/20261101170000_assistant_nudges.sql`
 5. `supabase/migrations/20261101190000_coworker_messages.sql`
+6. `supabase/migrations/20261103120000_customer_stage.sql`
 
 The first migration creates `customers`, `chats`, `messages`, `appointments`, and `payments`, plus a `chat_previews` view for the inbox. The third adds `business_profiles`, one row per owner: shop name, what they sell, hours, city, reply style, and an optional currency. Row level security is on for every table. A signed-in user can only read and write their own rows. Messages are visible only when the parent chat belongs to that user. No rows are seeded.
 
@@ -50,6 +52,8 @@ Settings → Your shop saves that profile. Without Supabase, the form keeps a sa
 The fourth migration adds `assistant_settings` and `nudges`. `assistant_settings` is one row per owner: `ask_first` (default), `auto_reply`, or `paused`. With no row, the app behaves as Ask me first. `nudges` stores in-app reminders only (hot buyer, follow-up, unanswered, and one morning check-in per UTC day). Row level security keeps both tables to the signed-in user. A customer or chat on a nudge must belong to that same user. Demo mode builds nudges from the sample inbox and keeps the handling choice on this device. A signed-in account with no customers or chats gets an empty bell until real chats exist. Mark read sets `read_at`. This does not send email, SMS, push, or WhatsApp. The WhatsApp ask-me-first switch in Channels is unchanged.
 
 The fifth migration adds `coworker_messages`, the owner's private thread with MyCoWorker. It is not the customer inbox. Row level security keeps each row to the signed-in user. Roles are `owner` and `assistant`. Demo mode does not use this table. It keeps the thread on the device. A signed-in reply is stored here, then the assistant answers. If `GEMINI_API_KEY` is set, that answer comes from Gemini. If it is not set, or Gemini does not answer, a local reply still comes back from the shop notes and the inbox the owner can already see. Nothing in this chat is sent on WhatsApp.
+
+The sixth migration adds `customers.stage` (`new`, `interested`, `paid`, or `follow_up`). Notes were already on `customers`. Existing rows become `new`. The owner-only policies already on `customers` cover the new column, so a signed-in user can only read and write their own stage and notes. The app does not apply this file. Run it in the Supabase SQL editor, or with `supabase db push`, before a signed-in account can save a stage. Until then, the customer list still loads and notes can still save.
 
 `lib/db/queries.ts` and `lib/db/profile.ts` read and write those tables with the anon key and the signed-in session. The service role key is not used. When the URL or anon key is missing, the inbox stays on the sample chats and the shop form keeps its edits on this device. When they are set and a query fails, the inbox stays empty and asks you to refresh, instead of showing the sample people inside a broken account. A signed-in account with no rows, and WhatsApp not connected, still shows the sample inbox. Connecting WhatsApp, or any saved chat, switches the inbox to that account's rows.
 

@@ -16,6 +16,7 @@ import type {
   CustomerPatch,
   MessageInput,
   MessageRole,
+  CustomerStage,
   PaymentInput,
   PaymentPatch,
   PaymentStatus,
@@ -163,6 +164,25 @@ function assertPatch(patch: object) {
   if (Object.values(patch).every((value) => value === undefined)) {
     throw new Error("Nothing to update.");
   }
+}
+
+export function assertCustomerStage(value: string): CustomerStage {
+  if (
+    value === "new" ||
+    value === "interested" ||
+    value === "paid" ||
+    value === "follow_up"
+  ) {
+    return value;
+  }
+  throw new Error("Pick a stage.");
+}
+
+export function customerCrmUpdate(input: { stage: string; notes: string }) {
+  return {
+    stage: assertCustomerStage(input.stage),
+    notes: optionalText(input.notes, 4000, "Notes") ?? null,
+  };
 }
 
 export function customerInsert(input: CustomerInput) {

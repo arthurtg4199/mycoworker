@@ -12,6 +12,7 @@ import {
   AnalyticsNavIcon,
   BellIcon,
   BuyersNavIcon,
+  CustomersNavIcon,
   InboxNavIcon,
   MenuIcon,
   SettingsNavIcon,
@@ -40,6 +41,7 @@ import {
 
 const tabs = [
   { href: "/", label: "Inbox" },
+  { href: "/customers", label: "Customers" },
   { href: "/buyers", label: "Buyers" },
   { href: "/analytics", label: "Analytics" },
   { href: "/settings", label: "Settings" },
@@ -228,7 +230,7 @@ export function AppChrome({
         aria-label="Primary"
         className="z-30 shrink-0 border-t border-[#F1F1F3] bg-white pb-[env(safe-area-inset-bottom)]"
       >
-        <ul className="grid h-16 grid-cols-4">
+        <ul className="grid h-16 grid-cols-5">
           {tabs.map((tab) => {
             const active =
               tab.href === "/"
@@ -239,11 +241,12 @@ export function AppChrome({
                 <Link
                   href={tab.href}
                   aria-current={active ? "page" : undefined}
-                  className={`flex h-full flex-col items-center justify-center gap-0.5 text-[11px] font-semibold ${
+                  className={`flex h-full min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 text-center text-[10px] leading-none font-semibold ${
                     active ? "text-mcw" : "text-[#9AA1AB]"
                   }`}
                 >
                   {tab.href === "/" ? <InboxNavIcon active={active} /> : null}
+                  {tab.href === "/customers" ? <CustomersNavIcon /> : null}
                   {tab.href === "/buyers" ? <BuyersNavIcon /> : null}
                   {tab.href === "/analytics" ? <AnalyticsNavIcon /> : null}
                   {tab.href === "/settings" ? <SettingsNavIcon /> : null}
