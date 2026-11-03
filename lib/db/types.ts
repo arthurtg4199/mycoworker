@@ -19,6 +19,8 @@ export type AppointmentStatus = "scheduled" | "completed" | "cancelled";
 
 export type PaymentStatus = "pending" | "confirmed" | "failed" | "refunded";
 
+export type CustomerStage = "new" | "interested" | "paid" | "follow_up";
+
 export type Customer = {
   id: string;
   user_id: string;
@@ -228,6 +230,7 @@ type CustomerRow = {
   happiness: number | null;
   ready_to_close: boolean;
   notes: string | null;
+  stage: CustomerStage;
   created_at: string;
   updated_at: string;
 };
@@ -374,6 +377,7 @@ export type Database = {
           happiness?: number | null;
           ready_to_close?: boolean;
           notes?: string | null;
+          stage?: CustomerStage;
           created_at?: string;
           updated_at?: string;
         },
@@ -388,6 +392,7 @@ export type Database = {
           happiness?: number | null;
           ready_to_close?: boolean;
           notes?: string | null;
+          stage?: CustomerStage;
           created_at?: string;
           updated_at?: string;
         }

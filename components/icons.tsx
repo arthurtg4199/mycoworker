@@ -222,6 +222,23 @@ export function InboxNavIcon({ active }: { active: boolean }) {
   );
 }
 
+export function CustomersNavIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="h-6 w-6"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="8" r="2.5" />
+      <path d="M6.4 18.6c.6-2.9 2.8-4.4 5.6-4.4s5 1.5 5.6 4.4" />
+    </svg>
+  );
+}
+
 export function BuyersNavIcon() {
   return (
     <svg
