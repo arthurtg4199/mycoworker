@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useSyncExternalStore } from "react";
 import { PaAvatar } from "@/components/pa-avatar";
 import { useSession } from "@/components/session";
@@ -58,6 +59,9 @@ export function DailyCheckInCard({
         <p className="mt-3 text-sm leading-5 text-[#4A4560]">{checkIn.quiet}</p>
       )}
       <p className="mt-3 text-sm leading-5 text-[#5C5870]">{handlingStance(active)}</p>
+      <Link href="/appointments" className="mt-3 inline-flex text-sm font-semibold text-mcw">
+        Appointments
+      </Link>
     </section>
   );
 }

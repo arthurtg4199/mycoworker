@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
+import { AppointmentsTodayLink } from "@/components/appointments-today-link";
+import { loadAppointmentBoard } from "@/lib/db/appointments";
 import { loadBusinessProfile, shopFacts } from "@/lib/db/profile";
 import { loadWorkspace } from "@/lib/db/queries";
 
@@ -60,6 +63,13 @@ export default async function AnalyticsPage() {
           </p>
         </Link>
       </div>
+      <Suspense
+        fallback={
+          <div className="mt-3 h-[4.5rem] rounded-3xl bg-white ring-1 ring-[#F0EAF8]" />
+        }
+      >
+        <AppointmentsToday />
+      </Suspense>
       <section className="mt-4 rounded-3xl bg-white p-4 ring-1 ring-[#F0EAF8]">
         <h3 className="text-sm font-bold text-ink">Where the chats came from</h3>
         <ul className="mt-4 space-y-4">
@@ -83,4 +93,9 @@ export default async function AnalyticsPage() {
       </section>
     </div>
   );
+}
+
+async function AppointmentsToday() {
+  const board = await loadAppointmentBoard();
+  return <AppointmentsTodayLink mode={board.mode} items={board.items} />;
 }
