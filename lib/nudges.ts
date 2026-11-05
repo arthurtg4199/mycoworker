@@ -2,6 +2,7 @@ import type { HandlingMode } from "@/lib/assistant-mode";
 import { handlingModeCopy } from "@/lib/assistant-mode";
 import type { ConversationStatus } from "@/lib/db/types";
 import { chats, type ChatStatus } from "@/lib/demo-data";
+import { scoreMood, type Mood } from "@/lib/mood";
 
 export const nudgeTypes = [
   "hot_buyer",
@@ -17,6 +18,7 @@ export type ChatSignal = {
   customerId: string | null;
   name: string;
   preview: string;
+  mood?: Mood;
   status: ConversationStatus;
   readyToClose: boolean;
 };
@@ -120,6 +122,7 @@ export function demoSignals(): ChatSignal[] {
     customerId: chat.id,
     name: chat.name,
     preview: chat.preview,
+    mood: scoreMood([chat.preview]).mood,
     status: demoStatus(chat.status),
     readyToClose: demoReady.has(chat.id),
   }));
@@ -127,14 +130,27 @@ export function demoSignals(): ChatSignal[] {
 
 export function classifySignal(signal: ChatSignal): Exclude<NudgeType, "daily_check_in"> | null {
   if (signal.status === "hot" || signal.readyToClose) return "hot_buyer";
+  if (
+    signal.mood === "upset" &&
+    signal.status !== "answered" &&
+    signal.status !== "closed"
+  ) {
+    return "unanswered";
+  }
   if (signal.status === "your_turn") return "unanswered";
   if (signal.status === "followed_up") return "follow_up";
   return null;
 }
 
-function titleFor(type: Exclude<NudgeType, "daily_check_in">, name: string) {
+function titleFor(
+  type: Exclude<NudgeType, "daily_check_in">,
+  name: string,
+  mood?: Mood,
+) {
   if (type === "hot_buyer") return `${name} is ready to buy`;
-  if (type === "unanswered") return `${name} is waiting`;
+  if (type === "unanswered") {
+    return mood === "upset" ? `${name} is upset` : `${name} is waiting`;
+  }
   return `Follow up with ${name}`;
 }
 
@@ -142,11 +158,15 @@ function bodyFor(
   type: Exclude<NudgeType, "daily_check_in">,
   name: string,
   preview: string,
+  mood?: Mood,
 ) {
   if (type === "hot_buyer") {
     return `${name} looks ready to close. “${preview}” I'll ask you before anyone hears back.`;
   }
   if (type === "unanswered") {
+    if (mood === "upset") {
+      return `${name} sounds upset. Reply to them first. They said: “${preview}”`;
+    }
     return `${name} has not been answered. They said: “${preview}”`;
   }
   return `A follow-up would keep ${name} warm. Last note: “${preview}”`;
@@ -169,8 +189,8 @@ export function signalDrafts(signals: ChatSignal[]): NudgeDraft[] {
     counts[type] += 1;
     drafts.push({
       type,
-      title: clipTitle(titleFor(type, name)),
-      body: bodyFor(type, name, preview),
+      title: clipTitle(titleFor(type, name, signal.mood)),
+      body: bodyFor(type, name, preview, signal.mood),
       customer_id: uuidOrNull(signal.customerId),
       chat_id: uuidOrNull(signal.chatId),
       dedupe_key: `${type}:${ref}`,

@@ -10,6 +10,7 @@ import {
   ChevronLeftIcon,
   SlidersIcon,
 } from "@/components/icons";
+import { MoodBadge } from "@/components/mood-badge";
 import { PaAvatar } from "@/components/pa-avatar";
 import { StatusPill } from "@/components/status-pill";
 import {
@@ -21,6 +22,7 @@ import {
 import type { Message } from "@/lib/db/types";
 import type { HandlingMode } from "@/lib/assistant-mode";
 import type { WorkspaceSource } from "@/lib/db/inbox";
+import { scoreMood } from "@/lib/mood";
 import type { DailyCheckIn } from "@/lib/nudges";
 import {
   loadThreadMessages,
@@ -35,6 +37,15 @@ const statusFilters: { id: StatusFilter; label: string }[] = [
   { id: "answered", label: "Answered" },
   { id: "followed_up", label: "Followed up" },
 ];
+
+function upsetBanner(chats: Chat[]) {
+  const upset = chats.filter((chat) => chat.mood === "upset");
+  if (upset.length === 0) return null;
+  if (upset.length === 1) {
+    return `${upset[0]?.name ?? "A customer"} sounds upset. Reply first.`;
+  }
+  return `${upset.length} customers sound upset. Reply first.`;
+}
 
 export function InboxScreen({
   chats,
@@ -107,6 +118,7 @@ export function InboxScreen({
     return true;
   });
 
+  const upsetNote = upsetBanner(visible);
   const activeFilter = statusFilters.find((item) => item.id === status);
 
   return (
@@ -206,6 +218,10 @@ export function InboxScreen({
         ) : null}
       </div>
 
+      {upsetNote ? (
+        <p className="mx-4 mt-3 text-sm font-semibold text-[#9A3B4A]">{upsetNote}</p>
+      ) : null}
+
       {visible.length === 0 ? (
         <EmptyInbox
           fresh={source === "live" && chats.length === 0 && !notice}
@@ -228,9 +244,12 @@ export function InboxScreen({
               >
                 <Avatar spec={chat.avatar} />
                 <span className="min-w-0 flex-1">
-                  <span className="flex items-baseline justify-between gap-3">
-                    <span className="truncate text-[15px] font-semibold text-ink">
-                      {chat.name}
+                  <span className="flex items-center justify-between gap-3">
+                    <span className="flex min-w-0 items-center gap-1.5">
+                      <span className="truncate text-[15px] font-semibold text-ink">
+                        {chat.name}
+                      </span>
+                      <MoodBadge mood={chat.mood} />
                     </span>
                     <time className="shrink-0 text-[12px] text-[#A0A4AE]">
                       {chat.time}
@@ -242,7 +261,12 @@ export function InboxScreen({
                     </span>
                     <StatusPill status={chat.status} />
                   </span>
-                  {chat.showTurnNote ? (
+                  {chat.mood === "upset" ? (
+                    <span className="mt-1 flex items-center gap-1.5 text-[12px] font-semibold text-[#9A3B4A]">
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#9A3B4A]" />
+                      Reply first
+                    </span>
+                  ) : chat.showTurnNote ? (
                     <span className="mt-1 flex items-center gap-1.5 text-[12px] font-semibold text-mcw">
                       <span className="h-1.5 w-1.5 rounded-full bg-mcw" />
                       Your turn
@@ -321,6 +345,16 @@ function Thread({
   const [sending, setSending] = useState(false);
   const channel = chat.channels[0];
   const canSend = live && channel === "whatsapp" && whatsappConnected;
+  const mood =
+    live && messages.length > 0
+      ? scoreMood(
+          messages.map((message) => ({
+            content: message.content,
+            role: message.role,
+            at: message.created_at,
+          })),
+        ).mood
+      : chat.mood;
 
   useEffect(() => {
     if (!live) return;
@@ -352,14 +386,22 @@ function Thread({
       <div className="mt-2 flex items-center gap-3">
         <Avatar spec={chat.avatar} />
         <div className="min-w-0">
-          <h2 className="truncate text-lg font-extrabold tracking-tight text-ink">
-            {chat.name}
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="truncate text-lg font-extrabold tracking-tight text-ink">
+              {chat.name}
+            </h2>
+            <MoodBadge mood={mood} />
+          </div>
           <p className="text-sm text-muted">
             {channel ? channelLabel(channel) : "Chat"} · {chat.time}
           </p>
         </div>
       </div>
+      {mood === "upset" ? (
+        <p className="mt-3 rounded-2xl bg-[#FDE8EC] px-3.5 py-2.5 text-sm font-semibold text-[#9A3B4A]">
+          They sound upset. Reply first.
+        </p>
+      ) : null}
       {loading ? (
         <p className="mt-4 text-sm text-muted">Opening chat…</p>
       ) : messages.length > 0 ? (

@@ -44,6 +44,8 @@ import {
   paymentInsert,
   paymentUpdate,
 } from "@/lib/db/validate";
+import { applyMood, type CustomerLine } from "@/lib/apply-mood";
+import { MOOD_WINDOW_MS } from "@/lib/mood";
 import { getSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
@@ -365,6 +367,31 @@ export async function updatePayment(
   return paymentFromRow(requiredRow(data, error));
 }
 
+function geminiKey() {
+  const value = process.env.GEMINI_API_KEY;
+  return typeof value === "string" ? value.trim() : "";
+}
+
+async function listRecentCustomerLines(
+  db: Db,
+  sinceIso: string,
+): Promise<CustomerLine[]> {
+  const { data, error } = await db
+    .from("messages")
+    .select("chat_id, role, content, created_at")
+    .eq("role", "user")
+    .gte("created_at", sinceIso)
+    .order("created_at", { ascending: false })
+    .limit(240);
+  if (error) throwQuery(error);
+  return (data ?? []).map((row) => ({
+    chatId: row.chat_id,
+    content: row.content,
+    role: row.role,
+    at: row.created_at,
+  }));
+}
+
 async function listChatPreviewsOn(db: Db): Promise<ChatPreview[]> {
   const { data, error } = await db
     .from("chat_previews")
@@ -381,24 +408,38 @@ async function listChatPreviewsOn(db: Db): Promise<ChatPreview[]> {
  * A failed read stays empty instead of mixing sample people into a broken account.
  */
 export const loadWorkspace = cache(async (): Promise<WorkspaceView> => {
-  if (!getSupabaseEnv()) return demoWorkspace();
+  if (!getSupabaseEnv()) return applyMood(demoWorkspace());
 
   try {
     const db = await database();
-    const [customers, previews, connection] = await Promise.all([
+    const now = new Date();
+    const since = new Date(now.getTime() - MOOD_WINDOW_MS).toISOString();
+    const [customers, previews, connection, customerLines] = await Promise.all([
       listCustomersOn(db),
       listChatPreviewsOn(db),
       getWhatsAppConnection(),
+      listRecentCustomerLines(db, since).catch((error: unknown) => {
+        console.error(
+          "MyCoWorker could not read recent messages for mood.",
+          error instanceof Error ? error.message : error,
+        );
+        return [] as CustomerLine[];
+      }),
     ]);
     if (!connection && customers.length === 0 && previews.length === 0) {
-      return sampleWorkspace();
+      return applyMood(sampleWorkspace(), [], now);
     }
-    return workspaceFromRecords(customers, previews, new Date(), {
-      connected: Boolean(connection),
-      autoReply: connection?.autoReply ?? false,
-    });
+    return applyMood(
+      workspaceFromRecords(customers, previews, now, {
+        connected: Boolean(connection),
+        autoReply: connection?.autoReply ?? false,
+      }),
+      customerLines,
+      now,
+      geminiKey(),
+    );
   } catch (error) {
-    if (error instanceof DatabaseNotConfiguredError) return demoWorkspace();
+    if (error instanceof DatabaseNotConfiguredError) return applyMood(demoWorkspace());
     console.error(
       "MyCoWorker could not load the workspace.",
       error instanceof Error ? error.message : error,
