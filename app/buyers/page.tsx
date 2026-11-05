@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Avatar } from "@/components/avatar";
+import { MoodBadge } from "@/components/mood-badge";
 import { PaAvatar } from "@/components/pa-avatar";
 import { StatusPill } from "@/components/status-pill";
 import { loadBusinessProfile, shopFacts } from "@/lib/db/profile";
@@ -60,6 +61,9 @@ export default async function BuyersPage() {
                     <p className="text-xs font-medium text-muted">
                       {channel ? channelLabel(channel) : "Chat"}
                     </p>
+                    <span className="mt-1 block">
+                      <MoodBadge mood={buyer.mood} />
+                    </span>
                   </div>
                   <StatusPill status={buyer.status} />
                 </div>

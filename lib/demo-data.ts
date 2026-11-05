@@ -21,6 +21,8 @@ export type Chat = {
   status?: ChatStatus;
   showTurnNote?: boolean;
   avatar: AvatarSpec;
+  /** Recent-message mood. Happy, neutral, or upset. */
+  mood?: "happy" | "neutral" | "upset";
 };
 
 export const dailySummary = {
@@ -77,6 +79,22 @@ export const chats: Chat[] = [
     time: "Yesterday",
     channels: [],
     avatar: { kind: "initial", letter: "A", tint: "#C9EBD8", ink: "#1F7A4D" },
+  },
+  {
+    id: "chioma",
+    name: "Chioma Okonkwo",
+    preview: "Abeg this thing no work. I no happy!!!",
+    time: "9:41 AM",
+    channels: ["whatsapp"],
+    status: "your_turn",
+    showTurnNote: true,
+    avatar: {
+      kind: "initial",
+      letter: "C",
+      tint: "#F8D7E8",
+      ink: "#8A3E66",
+      badge: "whatsapp",
+    },
   },
   {
     id: "ryan",
