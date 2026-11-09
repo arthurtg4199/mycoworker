@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Avatar } from "@/components/avatar";
 import { DailyCheckInCard } from "@/components/daily-check-in";
 import {
@@ -46,6 +46,7 @@ export function InboxScreen({
   businessName = null,
   checkIn,
   handlingMode,
+  dailySummary = null,
 }: {
   chats: Chat[];
   summary: { chatsHandled: number; buyersReady: number };
@@ -56,6 +57,7 @@ export function InboxScreen({
   businessName?: string | null;
   checkIn: DailyCheckIn;
   handlingMode: HandlingMode;
+  dailySummary?: ReactNode;
 }) {
   const [channel, setChannel] = useState<Channel | "all">("all");
   const [status, setStatus] = useState<StatusFilter>("all");
@@ -158,6 +160,8 @@ export function InboxScreen({
           <ArrowIcon className="h-4 w-4" />
         </span>
       </Link>
+
+      {dailySummary}
 
       <DailyCheckInCard checkIn={checkIn} mode={handlingMode} />
 
