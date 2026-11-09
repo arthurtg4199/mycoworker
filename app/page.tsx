@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { DailySummaryCard } from "@/components/daily-summary-card";
 import { InboxScreen } from "@/components/inbox-screen";
 import { loadAssistantHome } from "@/lib/db/assistant";
+import { loadDailySummary } from "@/lib/db/daily-summary";
 import { loadBusinessProfile, shopFacts } from "@/lib/db/profile";
 import { loadWorkspace } from "@/lib/db/queries";
 
@@ -9,10 +11,11 @@ export const metadata: Metadata = {
 };
 
 export default async function InboxPage() {
-  const [workspace, profile, assistant] = await Promise.all([
+  const [workspace, profile, assistant, daily] = await Promise.all([
     loadWorkspace(),
     loadBusinessProfile(),
     loadAssistantHome(),
+    loadDailySummary(),
   ]);
   const shop = shopFacts(profile);
   return (
@@ -26,6 +29,7 @@ export default async function InboxPage() {
       businessName={shop?.business_name ?? null}
       checkIn={assistant.checkIn}
       handlingMode={assistant.mode}
+      dailySummary={<DailySummaryCard summary={daily} />}
     />
   );
 }
